@@ -1,5 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import TelegramLoginButton from "./components/TelegramLoginButton";
+import { verifyTelegramAuth } from "./services/telegramAuth";
+import NicknameBindingModal from "./components/NicknameBindingModal";
+import { getUserData } from "./services/userService";
 import {
   BrowserRouter,
   Routes,
@@ -94,29 +99,115 @@ function withinLastNDays(createdAt, n) {
 // App
 export default function App() {
   return (
-    <BrowserRouter>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography
-            variant="h6"
-            component={Link}
-            to="/"
-            sx={{ color: "white", textDecoration: "none" }}
-          >
-            Marvel Rivals Reviews
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Container sx={{ mt: 4 }}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/player/:id" element={<PlayerProfile />} />
-        </Routes>
-      </Container>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <AuthAppBar />
+        <Container sx={{ mt: 4 }}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/player/:id" element={<PlayerProfile />} />
+          </Routes>
+        </Container>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
+const AuthAppBar = () => {
+  const { user, login, logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  const handleTelegramAuth = async (telegramData) => {
+    try {
+      const userData = await verifyTelegramAuth(telegramData);
+      login(userData);
+      navigate("/nickname-binding");
+    } catch (error) {
+      console.error("Telegram auth failed:", error);
+    }
+  };
+
+  return (
+    <AppBar position="static">
+      <Toolbar>
+        <Typography
+          variant="h6"
+          component={Link}
+          to="/"
+          sx={{ color: "white", textDecoration: "none", flexGrow: 1 }}
+        >
+          Marvel Rivals Reviews
+        </Typography>
+
+        {isAuthenticated ? (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Avatar src={user.photoURL} sx={{ width: 32, height: 32 }} />
+            <Typography>{user?.username}</Typography>
+            <Button color="inherit" onClick={logout}>
+              Logout
+            </Button>
+          </Box>
+        ) : (
+          <TelegramLoginButton
+            botName="MarvelRivalsReviewsAuthBot" // <-- замените на реальный username без @
+            onAuth={handleTelegramAuth}
+          />
+        )}
+      </Toolbar>
+    </AppBar>
+  );
+};
+
+function AuthenticatedAuthApp() {
+  const { user, loading } = useAuth();
+  const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [nicknameCheckComplete, setNicknameCheckComplete] = useState(false);
+
+  useEffect(() => {
+    const checkNicknameBinding = async () => {
+      if (user) {
+        const userData = await getUserData(user.uid);
+
+        if (!userData?.gameNickname) {
+          setShowNicknameModal(true);
+        }
+
+        setNicknameCheckComplete(true);
+      }
+    };
+
+    if (user && !loading) {
+      checkNicknameBinding();
+    }
+  }, [user, loading]);
+
+  if (loading || (user && !nicknameCheckComplete)) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <>
+      <BrowserRouter>
+        <AuthAppBar />
+        <Container sx={{ mt: 4 }}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/player/:id" element={<PlayerProfile />} />
+          </Routes>
+        </Container>
+      </BrowserRouter>
+
+      <NicknameBindingModal
+        open={showNicknameModal}
+        onClose={() => setShowNicknameModal(false)}
+      />
+    </>
+  );
+}
 function Home() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
