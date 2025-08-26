@@ -93,13 +93,20 @@ async function createOrGetPlayerByName(nickName) {
 
 async function getPlayerByNick(nick) {
   // Try common variants
-  const tryUrls = [`${API_BASE}/players/nick/${encodeURIComponent(nick)}`];
-  for (const u of tryUrls) {
-    try {
-      return await apiJson(u);
-    } catch {}
+  try {
+    const url = `${API_BASE}/players/search?nick=${encodeURIComponent(nick)}`;
+    const list = await apiJson(url);
+    // Ищем точное совпадение по нику
+    const player = Array.isArray(list)
+      ? list.find((p) => p.nickName === nick)
+      : null;
+    return player || null;
+  } catch (e) {
+    if (String(e.message).startsWith("404")) {
+      return null;
+    }
+    throw new Error("Player not found by nick");
   }
-  throw new Error("Player not found by nick");
 }
 
 async function searchPlayers(query, limit = 12) {
@@ -115,25 +122,36 @@ async function listRecentPlayers(limit = 12) {
   return Array.isArray(list) ? list : [];
 }
 
-// Reviews (server endpoints may not exist yet; we fail soft)
+// Reviews
 async function fetchReviewsByPlayer(playerNick, days = 30) {
   try {
-    const url = `${API_BASE}/reviews?player=${encodeURIComponent(
-      playerNick
-    )}&days=${days}`;
+    const url = `${API_BASE}/reviews/nick/${encodeURIComponent(playerNick)}`;
     const list = await apiJson(url);
-    return Array.isArray(list) ? list : [];
+    return Array.isArray(list)
+      ? list.map((review) => ({
+          id: review.id,
+          comment: review.review,
+          createdAt: review.created,
+          grade: review.grade,
+          rank: review.rank,
+          screenshotUrl: review.image,
+          author: review.owner?.userName || "Anonymous",
+        }))
+      : [];
   } catch {
     return [];
   }
 }
 
 async function addReview(payload) {
-  // payload: { playerNick, rank, grade, comment, screenshotUrl }
+  // payload: { playerId, rank, grade, comment }
   try {
     const res = await apiJson(`${API_BASE}/reviews`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Mrr-User-Id": "1",
+      },
       body: JSON.stringify(payload),
     });
     return res?.id ?? null;
@@ -216,24 +234,25 @@ function PlayerCard({ player }) {
     [player?.nickName]
   );
 
-  // last 30 days avg rank (soft-fail if no reviews backend)
-  const [avgRank, setAvgRank] = useState(null);
+  // Получаем статистику игрока
+  const [stats, setStats] = useState(null);
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const reviews = await fetchReviewsByPlayer(player.nickName, 30);
-      if (cancelled) return;
-      const ranks = reviews.map((r) => r.rank ?? 0);
-      setAvgRank(getAvg(ranks));
+      if (player.id) {
+        const playerStats = await getPlayerStats(player.id);
+        if (!cancelled) setStats(playerStats);
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [player.nickName]);
+  }, [player.id]);
 
+  // last 30 days avg rank (soft-fail if no reviews backend)
   const rankLabel =
-    avgRank != null
-      ? RANK_NAMES[clamp(Math.round(avgRank), 0, RANK_NAMES.length - 1)]
+    stats?.avgRank != null
+      ? RANK_NAMES[clamp(Math.round(stats.avgRank), 0, RANK_NAMES.length - 1)]
       : "No recent rank";
 
   return (
@@ -251,6 +270,9 @@ function PlayerCard({ player }) {
               <Typography variant="body2" color="text.secondary">
                 {rankLabel}
               </Typography>
+              {stats?.avgGrade != null && (
+                <Stars value={stats.avgGrade} size="small" />
+              )}
             </Box>
           </Stack>
         </CardContent>
@@ -339,19 +361,33 @@ function Home() {
       <ReviewForm
         onSubmit={async (f) => {
           const p = await createOrGetPlayerByName(f.playerNick);
-          await addReview({ ...f, playerNick: p.nickName });
+          await addReview({
+            playerId: p.id,
+            rank: f.rank,
+            grade: f.grade,
+            comment: f.comment,
+          });
         }}
       />
     </Container>
   );
 }
 
+async function getPlayerStats(playerId) {
+  try {
+    const url = `${API_BASE}/reviews/${playerId}`;
+    const stats = await apiJson(url);
+    return stats; // { avgRank, avgGrade }
+  } catch {
+    return null;
+  }
+}
+
 function PlayerProfile() {
   const { nick } = useParams();
   const [player, setPlayer] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [avgRank, setAvgRank] = useState(null);
-  const [avgGrade, setAvgGrade] = useState(null);
+  const [stats, setStats] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -362,11 +398,11 @@ function PlayerProfile() {
         if (cancelled) return;
         setPlayer(p);
 
-        // грузим отзывы и считаем средние
-        const reviews = await fetchReviewsByPlayer(p.nickName, 30);
-        if (cancelled) return;
-        setAvgRank(getAvg(reviews.map((r) => Number(r.rank ?? 0))));
-        setAvgGrade(getAvg(reviews.map((r) => Number(r.grade ?? 0))));
+        // Получаем статистику игрока
+        if (p.id) {
+          const playerStats = await getPlayerStats(p.id);
+          if (!cancelled) setStats(playerStats);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -377,45 +413,73 @@ function PlayerProfile() {
   }, [nick]);
 
   if (loading) return <Typography>Loading…</Typography>;
-  if (!player) return <Typography>Player not found</Typography>;
-
-  const avatarBg = colorFromString(player.nickName || "");
-  const rankLabel =
-    avgRank != null
-      ? RANK_NAMES[clamp(Math.round(avgRank), 0, RANK_NAMES.length - 1)]
-      : "No rank in 30 days";
-
-  return (
-    <div>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-        <Avatar sx={{ bgcolor: avatarBg, width: 72, height: 72 }}>
-          {player.nickName?.[0]?.toUpperCase() ?? "?"}
-        </Avatar>
-        <div>
-          <Typography variant="h4">{player.nickName}</Typography>
-          <Stars value={avgGrade ?? 0} size="large" />
-          <Typography variant="h6">{rankLabel}</Typography>
-        </div>
+  if (!player) {
+    return (
+      <Box>
+        <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+          Not found. Create first review below!
+        </Typography>
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <ReviewForm
+            initialNick={nick}
+            onSubmit={async (f) => {
+              const p = await createOrGetPlayerByName(f.playerNick); // игрок создаётся ТОЛЬКО здесь
+              await addReview({
+                playerId: p.id,
+                rank: f.rank,
+                grade: f.grade,
+                comment: f.comment,
+              });
+            }}
+          />
+        </Paper>
       </Box>
+    );
+  } else {
+    const avatarBg = colorFromString(player.nickName || "");
+    const rankLabel =
+      stats?.avgRank != null
+        ? RANK_NAMES[clamp(Math.round(stats.avgRank), 0, RANK_NAMES.length - 1)]
+        : "No rank in 30 days";
+    return (
+      <div>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+          <Avatar sx={{ bgcolor: avatarBg, width: 72, height: 72 }}>
+            {player.nickName?.[0]?.toUpperCase() ?? "?"}
+          </Avatar>
+          <div>
+            <Typography variant="h4">{player.nickName}</Typography>
+            {stats?.avgGrade != null && (
+              <Stars value={stats.avgGrade} size="large" />
+            )}{" "}
+            <Typography variant="h6">{rankLabel}</Typography>
+          </div>
+        </Box>
 
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography variant="h6">Leave a review</Typography>
-        <ReviewForm
-          initialNick={player.nickName}
-          onSubmit={async (f) => {
-            const p = await createOrGetPlayerByName(f.playerNick);
-            await addReview({ ...f, playerNick: p.nickName });
-          }}
-        />
-      </Paper>
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <Typography variant="h6">Leave a review</Typography>
+          <ReviewForm
+            initialNick={player.nickName}
+            onSubmit={async (f) => {
+              const p = await createOrGetPlayerByName(f.playerNick);
+              await addReview({
+                playerId: p.id,
+                rank: f.rank,
+                grade: f.grade,
+                comment: f.comment,
+              });
+            }}
+          />
+        </Paper>
 
-      <Divider sx={{ mb: 2 }} />
-      <Typography variant="h6" sx={{ mb: 1 }}>
-        All reviews
-      </Typography>
-      <ReviewsList playerNick={player.nickName} />
-    </div>
-  );
+        <Divider sx={{ mb: 2 }} />
+        <Typography variant="h6" sx={{ mb: 1 }}>
+          All reviews
+        </Typography>
+        <ReviewsList playerNick={player.nickName} />
+      </div>
+    );
+  }
 }
 
 /***********************************
