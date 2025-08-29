@@ -11,7 +11,12 @@ import Stars from "../components/Stars";
 import ReviewForm from "../components/ReviewForm";
 import ReviewsList from "../components/ReviewsList";
 import SuccessModal from "../components/SuccessModal";
-import { getPlayerByNick, getPlayerStats, createOrGetPlayerByName, addReview } from "../services/api";
+import {
+  getPlayerByNick,
+  getPlayerStats,
+  createOrGetPlayerByName,
+  addReview,
+} from "../services/api";
 import { colorFromString, clamp, RANK_NAMES } from "../utils";
 
 export default function PlayerProfile() {
@@ -89,50 +94,50 @@ export default function PlayerProfile() {
         />
       </Box>
     );
-  }
+  } else {
+    const avatarBg = colorFromString(player.nickName || "");
+    const rankLabel =
+      stats?.avgRank != null
+        ? RANK_NAMES[clamp(Math.round(stats.avgRank), 0, RANK_NAMES.length - 1)]
+        : "No rank in 30 days";
 
-  const avatarBg = colorFromString(player.nickName || "");
-  const rankLabel =
-    stats?.avgRank != null
-      ? RANK_NAMES[clamp(Math.round(stats.avgRank), 0, RANK_NAMES.length - 1)]
-      : "No rank in 30 days";
+    return (
+      <div>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+          <Avatar sx={{ bgcolor: avatarBg, width: 72, height: 72 }}>
+            {player.nickName?.[0]?.toUpperCase() ?? "?"}
+          </Avatar>
+          <div>
+            <Typography variant="h4">{player.nickName}</Typography>
+            {stats?.avgGrade != null && (
+              <Stars value={stats.avgGrade} size="large" />
+            )}
+            <Typography variant="h6">{rankLabel}</Typography>
+          </div>
+        </Box>
 
-  return (
-    <div>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-        <Avatar sx={{ bgcolor: avatarBg, width: 72, height: 72 }}>
-          {player.nickName?.[0]?.toUpperCase() ?? "?"}
-        </Avatar>
-        <div>
-          <Typography variant="h4">{player.nickName}</Typography>
-          {stats?.avgGrade != null && (
-            <Stars value={stats.avgGrade} size="large" />
-          )}
-          <Typography variant="h6">{rankLabel}</Typography>
-        </div>
-      </Box>
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <Typography variant="h6">Leave a review</Typography>
+          <ReviewForm
+            initialNick={player.nickName}
+            submitting={submitting}
+            onSubmit={handleReviewSubmit}
+          />
+        </Paper>
 
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography variant="h6">Leave a review</Typography>
-        <ReviewForm
-          initialNick={player.nickName}
-          submitting={submitting}
-          onSubmit={handleReviewSubmit}
+        <Divider sx={{ mb: 2 }} />
+        <Typography variant="h6" sx={{ mb: 1 }}>
+          All reviews
+        </Typography>
+        <ReviewsList playerNick={player.nickName} />
+
+        <SuccessModal
+          open={showSuccessModal}
+          onClose={handleSuccessModalClose}
+          title="Review Submitted!"
+          message="Your review has been submitted successfully. The page will refresh to show your changes."
         />
-      </Paper>
-
-      <Divider sx={{ mb: 2 }} />
-      <Typography variant="h6" sx={{ mb: 1 }}>
-        All reviews
-      </Typography>
-      <ReviewsList playerNick={player.nickName} />
-
-      <SuccessModal
-        open={showSuccessModal}
-        onClose={handleSuccessModalClose}
-        title="Review Submitted!"
-        message="Your review has been submitted successfully. The page will refresh to show your changes."
-      />
-    </div>
-  );
+      </div>
+    );
+  }
 }
