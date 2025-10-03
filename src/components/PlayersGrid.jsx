@@ -4,13 +4,16 @@ import Grid from "@mui/material/Grid";
 import PlayerCard from "./PlayerCard";
 
 export default function PlayersGrid({ items }) {
+  const displayedItems = items.slice(0, 6);
+
   return (
-    <Grid container spacing={2}>
-      {items.map((p) => (
-        <Grid item key={p.id ?? p.nickName} xs={12} sm={6} md={4} lg={3}>
-          <PlayerCard player={p} />
-        </Grid>
-      ))}
+<Grid container sx={{ width: "100%" }}>
+  {items.map((p) => (
+    <Grid item key={p.id} sx={{ flex: "1 1 25%", maxWidth: "25%", p: 1 }}>
+      <PlayerCard player={p} />
     </Grid>
+  ))}
+</Grid>
+
   );
 }

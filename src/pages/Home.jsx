@@ -30,7 +30,7 @@ export default function Home() {
           const list = await searchPlayers(debounced, 12);
           if (!cancelled) setResults(list);
         } else {
-          const list = await listRecentPlayers(12);
+          const list = await listRecentPlayers(8);
           if (!cancelled) setRecent(list);
         }
       } finally {
@@ -62,7 +62,9 @@ export default function Home() {
           <Typography variant="h6" sx={{ mb: 1 }}>
             Search results
           </Typography>
-          <PlayersGrid items={results} />
+          <Container sx={{ py: 4 }}>
+            <PlayersGrid items={results} />
+          </Container>
         </>
       ) : (
         <>

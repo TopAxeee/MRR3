@@ -14,7 +14,16 @@ export default function Header() {
           variant="h6"
           component={Link}
           to="/"
-          sx={{ color: "white", textDecoration: "none", flexGrow: 1 }}
+          sx={{ 
+            color: "white", 
+            textDecoration: "none", 
+            flexGrow: 1,
+            fontWeight: "bold",
+            background: "linear-gradient(45deg, #ffffff 30%, #fbbf24 90%)",
+            backgroundClip: "text",
+            WebkitBackgroundClip: "text",
+            color: "transparent",
+          }}
         >
           Marvel Rivals Reviews
         </Typography>
@@ -22,6 +31,12 @@ export default function Header() {
           component={Link} 
           to="/admin" 
           color="inherit"
+          sx={{
+            fontWeight: 600,
+            "&:hover": {
+              backgroundColor: "rgba(255, 255, 255, 0.1)"
+            }
+          }}
         >
           Admin
         </Button>
