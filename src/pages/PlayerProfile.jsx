@@ -11,19 +11,38 @@ import Stars from "../components/Stars";
 import ReviewForm from "../components/ReviewForm";
 import ReviewsList from "../components/ReviewsList";
 import SuccessModal from "../components/SuccessModal";
+import RankBadge from "../components/RankBadge";
 import {
   getPlayerByNick,
-  getPlayerStats,
   createOrGetPlayerByName,
   addReview,
 } from "../services/api";
-import { colorFromString, clamp, RANK_NAMES } from "../utils";
+import { clamp, RANK_NAMES } from "../utils";
+
+// Функция для генерации градиента на основе строки (скопирована из PlayerCard)
+const generateGradient = (str) => {
+  const gradients = [
+    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+    'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+    'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+    'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+    'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+    'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)',
+  ];
+  
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return gradients[Math.abs(hash) % gradients.length];
+};
 
 export default function PlayerProfile() {
   const { nick } = useParams();
   const [player, setPlayer] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -35,11 +54,6 @@ export default function PlayerProfile() {
         const p = await getPlayerByNick(nick);
         if (cancelled) return;
         setPlayer(p);
-
-        if (p?.id) {
-          const playerStats = await getPlayerStats(p.id);
-          if (!cancelled) setStats(playerStats);
-        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -95,24 +109,39 @@ export default function PlayerProfile() {
       </Box>
     );
   } else {
-    const avatarBg = colorFromString(player.nickName || "");
-    const rankLabel =
-      stats?.avgRank != null
-        ? RANK_NAMES[clamp(Math.round(stats.avgRank), 0, RANK_NAMES.length - 1)]
-        : "No rank in 30 days";
+    // Use the same gradient generation as in PlayerCard
+    const avatarGradient = generateGradient(player.nickName || "");
+    const initials = player?.nickName?.[0]?.toUpperCase() ?? "?";
+    
+    // Use player stats directly from the player object
+    const rankValue = player.avgRank != null ? clamp(Math.round(player.avgRank), 0, RANK_NAMES.length - 1) : null;
 
     return (
       <div>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-          <Avatar sx={{ bgcolor: avatarBg, width: 72, height: 72 }}>
-            {player.nickName?.[0]?.toUpperCase() ?? "?"}
+          {/* Updated avatar to use the same gradient as PlayerCard */}
+          <Avatar 
+            sx={{ 
+              background: avatarGradient, 
+              width: 72, 
+              height: 72,
+              fontSize: "2rem",
+              fontWeight: "bold"
+            }}
+          >
+            {initials}
           </Avatar>
           <div>
             <Typography variant="h4">{player.nickName}</Typography>
-            {stats?.avgGrade != null && (
-              <Stars value={stats.avgGrade} size="large" />
+            {player.avgGrade != null && (
+              <Stars value={player.avgGrade} size="large" />
             )}
-            <Typography variant="h6">{rankLabel}</Typography>
+            {/* Using RankBadge component instead of plain text */}
+            {rankValue != null ? (
+              <RankBadge rank={rankValue} size="large" />
+            ) : (
+              <Typography variant="h6">No rank in 30 days</Typography>
+            )}
           </div>
         </Box>
 

@@ -47,12 +47,9 @@ export async function createOrGetPlayerByName(nickName) {
 
 export async function getPlayerByNick(nick) {
   try {
-    const url = `${API_BASE}/players/search?nick=${encodeURIComponent(nick)}`;
-    const list = await apiJson(url);
-    const player = Array.isArray(list)
-      ? list.find((p) => p.nickName === nick)
-      : null;
-    return player || null;
+    // Updated to use the new endpoint for getting a player by nickname
+    const url = `${API_BASE}/players/nick/${encodeURIComponent(nick)}`;
+    return await apiJson(url);
   } catch (e) {
     if (String(e.message).startsWith("404")) {
       return null;
@@ -63,6 +60,7 @@ export async function getPlayerByNick(nick) {
 
 export async function searchPlayers(query, limit = 12) {
   if (!query) return listRecentPlayers(limit);
+  // Updated to use the new search endpoint
   const url = `${API_BASE}/players/search?nick=${encodeURIComponent(query)}`;
   const list = await apiJson(url);
   return Array.isArray(list) ? list.slice(0, limit) : [];
@@ -76,9 +74,9 @@ export async function listRecentPlayers(limit = 12) {
 
 export async function getPlayerStats(playerId) {
   try {
-    const url = `${API_BASE}/reviews/${playerId}`;
-    const stats = await apiJson(url);
-    return stats;
+    // This function is no longer needed as the player stats (avgRank and avgGrade) 
+    // are now included in the player object from getPlayerByNick
+    return null;
   } catch {
     return null;
   }

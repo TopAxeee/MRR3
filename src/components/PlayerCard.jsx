@@ -11,8 +11,8 @@ import Button from "@mui/material/Button";
 
 import Stars from "./Stars";
 import RankBadge from "./RankBadge";
-import { getPlayerStats } from "../services/api";
-import { clamp, RANK_NAMES } from "../utils";
+import { RANK_NAMES } from "../utils";
+import { clamp } from "../utils";
 
 // Функция для генерации градиента на основе строки
 const generateGradient = (str) => {
@@ -42,19 +42,12 @@ export default function PlayerCard({ player }) {
     [player?.nickName]
   );
 
-  const [stats, setStats] = useState(null);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (player.id) {
-        const playerStats = await getPlayerStats(player.id);
-        if (!cancelled) setStats(playerStats);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [player.id]);
+  // Use player stats directly from the player object
+  const stats = {
+    avgRank: player.avgRank,
+    avgGrade: player.avgGrade,
+    reviewCount: player.reviewCount || 0
+  };
 
   const rankValue = stats?.avgRank != null ? clamp(Math.round(stats.avgRank), 0, RANK_NAMES.length - 1) : null;
   const reviewCount = stats?.reviewCount || 0;
@@ -77,7 +70,7 @@ export default function PlayerCard({ player }) {
       <Card 
         sx={{ 
           flex: 1,          // растягиваем по доступному месту
-          height: 280,      // фиксируем только высоту
+          height: 320,      // фиксируем только высоту (increased from 280 to 320)
           width: '100%',
           minWidth: 0,
           borderRadius: 3,
@@ -100,8 +93,6 @@ export default function PlayerCard({ player }) {
           flexDirection: "column",
           p: 2,
           height: "100%",
-                    flex: 1,          // растягиваем по доступному месту
-
         }}
       >
         <CardContent sx={{ 
@@ -116,22 +107,20 @@ export default function PlayerCard({ player }) {
           padding: "16px !important",
           "&:last-child": { pb: 2 }
         }}>
-          {/* Rank Badge */}
-          <Box sx={{ minHeight: 32, display: "flex", alignItems: "center" }}>
-            {rankValue != null && (
-              <RankBadge rank={rankValue} size="small" />
-            )}
-          </Box>
-
-          {/* Avatar - фиксированный размер */}
-          <Box sx={{ mb: 1 }}>
+          {/* Avatar container with rank badge positioned on top-right */}
+          <Box sx={{ 
+            mb: 1,
+            position: "relative",
+            width: 96,
+            height: 96
+          }}>
             {player.image ? (
               <Avatar 
                 alt={player.nickName} 
                 src={player.image}
                 sx={{ 
-                  width: 64, 
-                  height: 64,
+                  width: 96, 
+                  height: 96,
                   mx: "auto",
                   border: "3px solid #334155"
                 }} 
@@ -139,16 +128,27 @@ export default function PlayerCard({ player }) {
             ) : (
               <Avatar 
                 sx={{ 
-                  width: 64, 
-                  height: 64,
+                  width: 96, 
+                  height: 96,
                   mx: "auto",
                   background: avatarGradient,
-                  fontSize: "1.5rem",
+                  fontSize: "2rem",
                   fontWeight: "bold"
                 }}
               >
                 {initials}
               </Avatar>
+            )}
+            {/* Rank Badge positioned on top-right of avatar */}
+            {rankValue != null && (
+              <Box sx={{ 
+                position: "absolute", 
+                top: -8, 
+                right: -8,
+                zIndex: 10
+              }}>
+                <RankBadge rank={rankValue} size="small" />
+              </Box>
             )}
           </Box>
 
@@ -185,7 +185,7 @@ export default function PlayerCard({ player }) {
             alignItems: "center",
             mb: 1
           }}>
-            {stats?.avgGrade != null && (
+            {stats?.avgGrade != null ? (
               <>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
                   <Stars value={stats.avgGrade} size="small" />
@@ -206,6 +206,10 @@ export default function PlayerCard({ player }) {
                   {reviewCount} review{reviewCount !== 1 ? 's' : ''}
                 </Typography>
               </>
+            ) : (
+              <Typography variant="caption" color="text.secondary">
+                No reviews
+              </Typography>
             )}
           </Box>
 
