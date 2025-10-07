@@ -54,6 +54,13 @@ export default function PlayerProfile() {
         const p = await getPlayerByNick(nick);
         if (cancelled) return;
         setPlayer(p);
+        
+        // Update document title when player data is loaded
+        if (p && p.nickName) {
+          document.title = `${p.nickName} MRR`;
+        } else {
+          document.title = `${nick} MRR`;
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -88,6 +95,9 @@ export default function PlayerProfile() {
 
   if (loading) return <Typography>Loading…</Typography>;
   if (!player) {
+    // Update document title for new players
+    document.title = `${nick} MRR`;
+    
     return (
       <Box>
         <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>

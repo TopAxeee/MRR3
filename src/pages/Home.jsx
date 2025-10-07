@@ -21,6 +21,11 @@ export default function Home() {
   const [submitting, setSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
+  // Set document title when component mounts
+  useEffect(() => {
+    document.title = "Marvel Rivals reviews";
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);

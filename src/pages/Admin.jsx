@@ -41,6 +41,22 @@ export default function Admin() {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
+  // Set document title when component mounts
+  useEffect(() => {
+    document.title = "admin Marvel Rivals reviews";
+  }, []);
+
+  // Function to handle clicking on player row
+  const handlePlayerRowClick = (player) => {
+    navigate(`/player/${player.nickName}`);
+  };
+
+  // Function to handle edit action
+  const handleEditPlayer = (player) => {
+    // Navigate to player profile for editing
+    navigate(`/player/${player.nickName}`);
+  };
+
   // Load data based on active tab
   useEffect(() => {
     loadData();
@@ -107,11 +123,6 @@ export default function Admin() {
     setSelectedItem(null);
   };
 
-  const handleEditPlayer = (player) => {
-    // Navigate to player profile for editing
-    navigate(`/player/${player.nickName}`);
-  };
-
   const filteredPlayers = players.filter(player => 
     player.nickName.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -153,23 +164,49 @@ export default function Admin() {
                 <TableHead>
                   <TableRow>
                     <TableCell>Nickname</TableCell>
+                    <TableCell>Avg Grade</TableCell>
+                    <TableCell>Avg Rank</TableCell>
+                    <TableCell>Reviews Count</TableCell>
                     <TableCell>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {filteredPlayers.map((player) => (
-                    <TableRow key={player.id}>
-                      <TableCell>{player.nickName}</TableCell>
+                    <TableRow 
+                      key={player.id}
+                      sx={{ '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)', cursor: 'pointer' } }}
+                      onClick={() => handlePlayerRowClick(player)}
+                    >
+                      <TableCell component="th" scope="row">
+                        {player.nickName}
+                      </TableCell>
+                      <TableCell>
+                        {player.avgGrade !== undefined && player.avgGrade !== null ? 
+                          player.avgGrade.toFixed(1) : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {player.avgRank !== undefined && player.avgRank !== null ? 
+                          player.avgRank.toFixed(1) : 'N/A'}
+                      </TableCell>
+                      <TableCell>{player.reviewsCount || 0}</TableCell>
                       <TableCell>
                         <IconButton 
-                          onClick={() => handleEditPlayer(player)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditPlayer(player);
+                          }}
                           color="primary"
+                          size="small"
                         >
                           <EditIcon />
                         </IconButton>
                         <IconButton 
-                          onClick={() => handleDeleteClick(player)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteClick(player);
+                          }}
                           color="error"
+                          size="small"
                         >
                           <DeleteIcon />
                         </IconButton>
@@ -202,6 +239,7 @@ export default function Admin() {
                         <IconButton 
                           onClick={() => handleDeleteClick(review)}
                           color="error"
+                          size="small"
                         >
                           <DeleteIcon />
                         </IconButton>

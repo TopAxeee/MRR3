@@ -1,5 +1,5 @@
 // src/pages/NotFound.jsx
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -8,6 +8,11 @@ import Paper from "@mui/material/Paper";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 
 export default function NotFound() {
+  // Set document title when component mounts
+  useEffect(() => {
+    document.title = "404 MRR";
+  }, []);
+
   return (
     <Box
       sx={{

@@ -46,7 +46,7 @@ export default function PlayerCard({ player }) {
   const stats = {
     avgRank: player.avgRank,
     avgGrade: player.avgGrade,
-    reviewCount: player.reviewCount || 0
+    reviewCount: player.reviewsCount || 0
   };
 
   const rankValue = stats?.avgRank != null ? clamp(Math.round(stats.avgRank), 0, RANK_NAMES.length - 1) : null;

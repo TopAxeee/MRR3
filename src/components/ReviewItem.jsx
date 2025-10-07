@@ -5,6 +5,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 
 import Stars from "./Stars";
+import RankBadge from "./RankBadge";
 
 export default function ReviewItem({ review }) {
   return (
@@ -30,7 +31,12 @@ export default function ReviewItem({ review }) {
             {new Date(review.createdAt ?? Date.now()).toLocaleString()}
           </Typography>
         </Box>
-        <Stars value={review.grade ?? 0} />
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
+          <Stars value={review.grade ?? 0} />
+          {review.rank !== undefined && review.rank !== null && (
+            <RankBadge rank={review.rank} size="small" />
+          )}
+        </Box>
       </Stack>
       {review.comment && (
         <Typography sx={{ mt: 1 }}>{review.comment}</Typography>
