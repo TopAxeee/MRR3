@@ -1,6 +1,22 @@
 // src/services/api.js
 const API_BASE = import.meta.env?.VITE_API_BASE || "http://localhost:8080";
 
+// Check if user is authenticated
+export function isAuthenticated() {
+  return !!localStorage.getItem("telegramUser");
+}
+
+// Get current user
+export function getCurrentUser() {  
+  const userStr = localStorage.getItem("telegramUser");
+  return userStr ? JSON.parse(userStr) : null;
+}
+
+// Logout user
+export function logout() {
+  localStorage.removeItem("telegramUser");
+}
+
 async function apiJson(url, opts = {}) {
   const res = await fetch(url, opts);
   if (!res.ok) {
@@ -72,14 +88,12 @@ export async function listRecentPlayers(limit = 12) {
   return Array.isArray(list) ? list : [];
 }
 
-export async function getPlayerStats(playerId) {
-  try {
-    // This function is no longer needed as the player stats (avgRank and avgGrade) 
-    // are now included in the player object from getPlayerByNick
-    return null;
-  } catch {
-    return null;
-  }
+export async function listAllPlayers() {
+  // Fetch all players for leaderboard
+  // Note: In a production environment, this should be paginated
+  const url = `${API_BASE}/players?limit=1000`;
+  const list = await apiJson(url);
+  return Array.isArray(list) ? list : [];
 }
 
 // Reviews

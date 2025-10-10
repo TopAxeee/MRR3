@@ -11,6 +11,8 @@ import Home from "./pages/Home";
 import PlayerProfile from "./pages/PlayerProfile";
 import NotFound from "./pages/NotFound";
 import Admin from "./pages/Admin";
+import Login from "./pages/Login";
+import Leaderboard from "./pages/Leaderboard";
 
 export default function App() {
   return (
@@ -21,7 +23,9 @@ export default function App() {
         <Container sx={{ mt: 4 }}>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
             <Route path="/player/:nick" element={<PlayerProfile />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
