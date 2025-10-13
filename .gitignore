@@ -22,3 +22,77 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.env
+
+# Additional recommended entries
+# Build outputs
+/build
+/out-tsc
+
+# Temporary files
+tmp
+temp
+
+# IDE files
+*.iml
+*.iws
+*.ipr
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Vite related
+.vite
+.cache
+
+# Coverage reports
+coverage/
+
+# Dependency directories
+jspm_packages/
+web_modules/
+
+# Typescript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# parcel-bundler cache
+.cache-loader
+
+# next.js build output
+.next
+
+# nuxt.js build output
+.nuxt
+
+# vuepress build output
+.vuepress/dist
+
+# Serverless directories
+.serverless/
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Stores VSCode versions used for testing
+.vscode-test/
+
+# yarn v2
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.yarn/patches

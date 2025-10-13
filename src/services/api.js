@@ -3,7 +3,7 @@ const API_BASE = import.meta.env?.VITE_API_BASE || "http://localhost:8080";
 
 // Check if user is authenticated
 export function isAuthenticated() {
-  return !!localStorage.getItem("telegramUser");
+  return !!localStorage.getItem("telegramUser") && !!localStorage.getItem("sessionToken");
 }
 
 // Get current user
@@ -12,12 +12,27 @@ export function getCurrentUser() {
   return userStr ? JSON.parse(userStr) : null;
 }
 
+// Get session token
+export function getSessionToken() {
+  return localStorage.getItem("sessionToken");
+}
+
 // Logout user
 export function logout() {
   localStorage.removeItem("telegramUser");
+  localStorage.removeItem("sessionToken");
 }
 
 async function apiJson(url, opts = {}) {
+  // Add session token to headers if available
+  const token = getSessionToken();
+  if (token) {
+    opts.headers = {
+      ...opts.headers,
+      "Authorization": `Bearer ${token}`
+    };
+  }
+  
   const res = await fetch(url, opts);
   if (!res.ok) {
     const text = await res.text();
@@ -123,7 +138,6 @@ export async function addReview(payload) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Mrr-User-Id": "1",
       },
       body: JSON.stringify(payload),
     });

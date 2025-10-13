@@ -1,15 +1,16 @@
 // src/pages/Login.jsx
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
-import Button from "@mui/material/Button";
+import Alert from "@mui/material/Alert";
 import TelegramLogin from "../components/TelegramLogin";
 import { isAuthenticated } from "../services/api";
 
 const Login = () => {
   const navigate = useNavigate();
+  const [error, setError] = useState(null);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -19,10 +20,14 @@ const Login = () => {
   }, [navigate]);
 
   const handleLoginSuccess = (user) => {
-    // Store user info in localStorage
-    localStorage.setItem("telegramUser", JSON.stringify(user));
+    // Clear any previous errors
+    setError(null);
     // Navigate to home
     navigate("/");
+  };
+
+  const handleLoginError = (errorMessage) => {
+    setError(errorMessage);
   };
 
   return (
@@ -55,10 +60,20 @@ const Login = () => {
           Please log in with your Telegram account to continue
         </Typography>
         
-        <TelegramLogin 
-          botName="MarvelRivalsReviewsAuthBot" 
-          onLoginSuccess={handleLoginSuccess}
-        />
+        {error && (
+          <Alert severity="error" sx={{ width: "100%" }}>
+            {error}
+          </Alert>
+        )}
+        
+        {/* Added wrapper to prevent potential button nesting issues */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <TelegramLogin 
+            botName={import.meta.env.VITE_TELEGRAM_BOT_NAME || "MarvelRivalsReviewsAuthBot"}
+            onLoginSuccess={handleLoginSuccess}
+            onError={handleLoginError}
+          />
+        </Box>
         
         <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
           Don't have a Telegram account?{" "}

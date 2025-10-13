@@ -9,21 +9,27 @@ import Divider from "@mui/material/Divider";
 import PlayersGrid from "../components/PlayersGrid";
 import ReviewForm from "../components/ReviewForm";
 import SuccessModal from "../components/SuccessModal";
-import { searchPlayers, listRecentPlayers, createOrGetPlayerByName, addReview } from "../services/api";
+import { searchPlayers, listAllPlayers, createOrGetPlayerByName, addReview } from "../services/api";
 import { useDebouncedValue } from "../utils";
+
+// Function to get random items from an array
+function getRandomItems(array, count) {
+  const shuffled = [...array].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, count);
+}
 
 export default function Home() {
   const [query, setQuery] = useState("");
   const debounced = useDebouncedValue(query, 400);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
-  const [recent, setRecent] = useState([]);
+  const [randomPlayers, setRandomPlayers] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Set document title when component mounts
   useEffect(() => {
-    document.title = "Marvel Rivals reviews";
+    document.title = "Marvel Rivals Reviews";
   }, []);
 
   useEffect(() => {
@@ -32,11 +38,12 @@ export default function Home() {
     (async () => {
       try {
         if (debounced) {
-          const list = await searchPlayers(debounced, 12);
+          const list = await searchPlayers(debounced, 8);
           if (!cancelled) setResults(list);
         } else {
-          const list = await listRecentPlayers(8);
-          if (!cancelled) setRecent(list);
+          const allPlayers = await listAllPlayers();
+          const randomSelection = getRandomItems(allPlayers, 8);
+          if (!cancelled) setRandomPlayers(randomSelection);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -74,9 +81,9 @@ export default function Home() {
       ) : (
         <>
           <Typography variant="h6" sx={{ mb: 1 }}>
-            Recently added
+            Random players
           </Typography>
-          <PlayersGrid items={recent} />
+          <PlayersGrid items={randomPlayers} />
         </>
       )}
       {loading && (

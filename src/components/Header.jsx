@@ -16,9 +16,17 @@ export default function Header() {
     const checkAuth = () => {
       if (isAuthenticated()) {
         try {
-          setUser(getCurrentUser());
+          const currentUser = getCurrentUser();
+          if (currentUser) {
+            setUser(currentUser);
+          } else {
+            // If we have a token but no user data, logout to clean up
+            logout();
+          }
         } catch (e) {
           console.error("Error parsing user data:", e);
+          // Clear invalid user data
+          logout();
         }
       }
     };
@@ -58,6 +66,7 @@ export default function Header() {
             background: "linear-gradient(45deg, #ffffff 30%, #fbbf24 90%)",
             backgroundClip: "text",
             WebkitBackgroundClip: "text",
+            // Removed duplicate color property
             color: "transparent",
           }}
         >
@@ -88,7 +97,7 @@ export default function Header() {
                 display: { xs: 'none', sm: 'block' }
               }}
             >
-              Hello, {user.first_name}
+              Hello, {user.first_name || user.firstName || 'User'}
             </Typography>
             <Button 
               onClick={handleLogout}
