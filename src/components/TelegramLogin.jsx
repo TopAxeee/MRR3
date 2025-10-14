@@ -2,6 +2,7 @@
 import React, { useEffect, useRef } from "react";
 import Button from "@mui/material/Button";
 import TelegramIcon from "@mui/icons-material/Telegram";
+import { API_BASE } from "../services/api";
 
 const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" }) => {
   const containerRef = useRef(null);
@@ -11,7 +12,7 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
     console.log("Telegram auth data received:", data);
     
     // Send the data to your backend for validation
-    fetch("/api/auth/telegram", {
+    fetch(`${API_BASE}/auth/telegram`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -20,6 +21,9 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
     })
       .then((response) => {
         console.log("Backend response status:", response.status);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         return response.json();
       })
       .then((result) => {
