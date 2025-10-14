@@ -1,5 +1,5 @@
 // src/services/api.js
-const API_BASE = import.meta.env?.VITE_API_BASE || "https://marvel-rivals-reviews.onrender.com";
+export const API_BASE = import.meta.env?.VITE_API_BASE || "https://marvel-rivals-reviews.onrender.com";
 
 // Check if user is authenticated
 export function isAuthenticated() {
