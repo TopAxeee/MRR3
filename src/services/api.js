@@ -134,11 +134,22 @@ export async function fetchReviewsByPlayer(playerNick, days = 30) {
 
 export async function addReview(payload) {
   try {
+    // Get user ID from local storage
+    const currentUser = getCurrentUser();
+    const userId = currentUser?.id;
+    
+    const headers = {
+      "Content-Type": "application/json",
+    };
+    
+    // Add user ID header if available
+    if (userId) {
+      headers["X-Mrr-User-Id"] = userId;
+    }
+    
     const res = await apiJson(`${API_BASE}/reviews`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(payload),
     });
     return res?.id ?? null;
