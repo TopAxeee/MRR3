@@ -11,14 +11,14 @@ export default defineConfig({
     strictPort: true,
 
     // важно! — сообщает Vite правильный публичный адрес
-    origin: 'https://ben-weirless-emilia.ngrok-free.dev',
+    origin: 'https://marvelrivalsreviews.vercel.app/',
 
     cors: true,
     allowedHosts: [
       'localhost',
       '127.0.0.1',
       '192.168.135.21',
-      'ben-weirless-emilia.ngrok-free.dev',
+      'https://marvelrivalsreviews.vercel.app/',
     ],
 
     proxy: {
