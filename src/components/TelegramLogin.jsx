@@ -55,7 +55,7 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
 
   // Create Telegram widget
   const createTelegramWidget = () => {
-    if (containerRef.current && window.Telegram) {
+    if (containerRef.current) {
       // Clear container
       containerRef.current.innerHTML = '';
       
@@ -76,29 +76,21 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
         script.setAttribute(key, attributes[key]);
       });
       
+      console.log("Creating Telegram widget with bot:", botName);
       containerRef.current.appendChild(script);
     }
   };
 
   // Initialize Telegram widget
   useEffect(() => {
+    console.log("Initializing Telegram widget with bot:", botName);
+    
     // Set up global callback
     window.handleTelegramAuthCallback = handleTelegramResponse;
     
     // Load Telegram script
     const loadTelegramWidget = () => {
-      if (!document.getElementById('telegram-widget-script')) {
-        const script = document.createElement('script');
-        script.id = 'telegram-widget-script';
-        script.src = 'https://telegram.org/js/telegram-widget.js?22';
-        script.async = true;
-        script.onload = () => {
-          createTelegramWidget();
-        };
-        document.head.appendChild(script);
-      } else {
-        createTelegramWidget();
-      }
+      createTelegramWidget();
     };
     
     // Check if Telegram is already loaded
@@ -108,12 +100,16 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
       loadTelegramWidget();
     }
     
+    // Also recreate widget when botName or buttonSize changes
+    setTimeout(() => {
+      if (!containerRef.current?.firstChild) {
+        console.log("Recreating Telegram widget as it wasn't created properly");
+        createTelegramWidget();
+      }
+    }, 100);
+    
     return () => {
       // Clean up
-      const script = document.getElementById('telegram-widget-script');
-      if (script) {
-        script.remove();
-      }
       if (containerRef.current) {
         containerRef.current.innerHTML = '';
       }
