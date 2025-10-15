@@ -26,7 +26,7 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ authData: data }),
     })
       .then((response) => {
         console.log("Backend response status:", response.status);
