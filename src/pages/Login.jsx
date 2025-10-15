@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Box from "@mui/material/Box";
+
 import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import Alert from "@mui/material/Alert";
@@ -11,6 +12,7 @@ import { isAuthenticated } from "../services/api";
 const Login = () => {
   const navigate = useNavigate();
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -22,12 +24,14 @@ const Login = () => {
   const handleLoginSuccess = (user) => {
     // Clear any previous errors
     setError(null);
+    setLoading(true);
     // Navigate to home
     navigate("/");
   };
 
   const handleLoginError = (errorMessage) => {
     setError(errorMessage);
+    setLoading(false);
   };
 
   return (
@@ -63,6 +67,12 @@ const Login = () => {
         {error && (
           <Alert severity="error" sx={{ width: "100%" }}>
             {error}
+          </Alert>
+        )}
+        
+        {loading && (
+          <Alert severity="info" sx={{ width: "100%" }}>
+            Authenticating... Please wait.
           </Alert>
         )}
         

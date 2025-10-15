@@ -11,6 +11,15 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
   const handleTelegramResponse = (data) => {
     console.log("Telegram auth data received:", data);
     
+    // Validate that we received data
+    if (!data || !data.id) {
+      console.error("Invalid Telegram auth data received:", data);
+      if (onError) {
+        onError("Invalid authentication data received from Telegram. Please try again.");
+      }
+      return;
+    }
+    
     // Send the data to your backend for validation
     fetch(`${API_BASE}/auth/telegram`, {
       method: "POST",
@@ -85,6 +94,23 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
   useEffect(() => {
     console.log("Initializing Telegram widget with bot:", botName);
     
+    // Validate bot name
+    if (!botName) {
+      console.error("Telegram bot name is not configured");
+      if (onError) {
+        onError("Telegram bot is not properly configured. Please contact administrator.");
+      }
+      return;
+    }
+    
+    // Log environment information for debugging
+    console.log("Telegram auth environment:", {
+      botName: botName,
+      apiBase: API_BASE,
+      isDev: import.meta.env.DEV,
+      domain: window.location.origin
+    });
+    
     // Set up global callback
     window.handleTelegramAuthCallback = handleTelegramResponse;
     
@@ -108,6 +134,22 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
       }
     }, 100);
     
+    // Add error handling for script loading
+    const handleError = (event) => {
+      console.error("Error loading Telegram widget:", event);
+      if (onError) {
+        onError("Failed to load Telegram authentication widget. Please check your connection and try again.");
+      }
+    };
+    
+    // Listen for script loading errors
+    const scripts = document.getElementsByTagName('script');
+    for (let i = 0; i < scripts.length; i++) {
+      if (scripts[i].src.includes('telegram-widget')) {
+        scripts[i].addEventListener('error', handleError);
+      }
+    }
+    
     return () => {
       // Clean up
       if (containerRef.current) {
@@ -120,6 +162,11 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
   return (
     <div ref={containerRef} id="telegram-login-container">
       {/* Telegram widget will be injected here */}
+      {!botName && (
+        <div style={{ color: 'red' }}>
+          Telegram bot not configured. Please set VITE_TELEGRAM_BOT_NAME in .env file.
+        </div>
+      )}
     </div>
   );
 };
