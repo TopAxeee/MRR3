@@ -74,8 +74,9 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
       // Set attributes to match your widget
       script.setAttribute('data-telegram-login', botName);
       script.setAttribute('data-size', buttonSize);
+      // Use data-auth-url instead of data-onauth to avoid eval
       script.setAttribute('data-auth-url', `${API_BASE}/api/auth/telegram`);
-      script.setAttribute('data-onauth', 'handleTelegramAuthCallback(user)');
+      // Remove the data-onauth attribute that causes CSP issues
       
       console.log("Creating Telegram widget with bot:", botName);
       containerRef.current.appendChild(script);
@@ -103,8 +104,8 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
       domain: window.location.origin
     });
     
-    // Set up global callback
-    window.handleTelegramAuthCallback = handleTelegramResponse;
+    // Remove the global callback that was causing CSP issues
+    // window.handleTelegramAuthCallback = handleTelegramResponse;
     
     // Create the Telegram widget
     createTelegramWidget();
@@ -130,7 +131,8 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
       if (containerRef.current) {
         containerRef.current.innerHTML = '';
       }
-      delete window.handleTelegramAuthCallback;
+      // Remove the global callback cleanup
+      // delete window.handleTelegramAuthCallback;
     };
   }, [botName, buttonSize]);
 
