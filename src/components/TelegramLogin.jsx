@@ -60,7 +60,7 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
       });
   };
 
-  // Create Telegram widget using the approach from your widget
+  // Create Telegram widget using the approach with data-auth-url
   const createTelegramWidget = () => {
     if (containerRef.current) {
       // Clear container
@@ -74,6 +74,7 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
       // Set attributes to match your widget
       script.setAttribute('data-telegram-login', botName);
       script.setAttribute('data-size', buttonSize);
+      script.setAttribute('data-auth-url', 'https://marvelrivalsreviews.vercel.app/');
       script.setAttribute('data-onauth', 'window.handleTelegramAuthCallback(user)');
       
       console.log("Creating Telegram widget with bot:", botName);
