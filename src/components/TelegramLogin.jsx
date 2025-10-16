@@ -74,7 +74,7 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
       // Set attributes to match your widget
       script.setAttribute('data-telegram-login', botName);
       script.setAttribute('data-size', buttonSize);
-      script.setAttribute('data-auth-url', 'https://marvelrivalsreviews.vercel.app/');
+      script.setAttribute('data-auth-url', 'https://marvelrivalsreviews.vercel.app/login');
       script.setAttribute('data-onauth', 'window.handleTelegramAuthCallback(user)');
       
       console.log("Creating Telegram widget with bot:", botName);
