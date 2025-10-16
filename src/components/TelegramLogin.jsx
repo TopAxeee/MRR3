@@ -1,7 +1,6 @@
 // src/components/TelegramLogin.jsx
 import React, { useEffect, useRef } from "react";
-import Button from "@mui/material/Button";
-import TelegramIcon from "@mui/icons-material/Telegram";
+import { API_BASE } from "../services/api";
 
 const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" }) => {
   const containerRef = useRef(null);
@@ -10,16 +9,28 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
   const handleTelegramResponse = (data) => {
     console.log("Telegram auth data received:", data);
     
+    // Validate that we received data
+    if (!data || !data.id) {
+      console.error("Invalid Telegram auth data received:", data);
+      if (onError) {
+        onError("Invalid authentication data received from Telegram. Please try again.");
+      }
+      return;
+    }
+    
     // Send the data to your backend for validation
-    fetch("/api/auth/telegram", {
+    fetch(`${API_BASE}/api/auth/telegram`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ authData: data }),
     })
       .then((response) => {
         console.log("Backend response status:", response.status);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         return response.json();
       })
       .then((result) => {
@@ -49,67 +60,73 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
       });
   };
 
-  // Create Telegram widget
+  // Create Telegram widget using the approach with data-auth-url
   const createTelegramWidget = () => {
-    if (containerRef.current && window.Telegram) {
+    if (containerRef.current) {
       // Clear container
       containerRef.current.innerHTML = '';
       
-      // Create widget
+      // Create the script element for Telegram widget
       const script = document.createElement('script');
       script.async = true;
       script.src = 'https://telegram.org/js/telegram-widget.js?22';
       
-      const attributes = {
-        'data-telegram-login': botName,
-        'data-size': buttonSize,
-        'data-radius': '20',
-        'data-request-access': 'write',
-        'data-onauth': 'window.handleTelegramAuthCallback(user)'
-      };
+      // Set attributes to match your widget
+      script.setAttribute('data-telegram-login', botName);
+      script.setAttribute('data-size', buttonSize);
+      script.setAttribute('data-auth-url', `${API_BASE}/api/auth/telegram`);
+      script.setAttribute('data-onauth', 'handleTelegramAuthCallback(user)');
       
-      Object.keys(attributes).forEach(key => {
-        script.setAttribute(key, attributes[key]);
-      });
-      
+      console.log("Creating Telegram widget with bot:", botName);
       containerRef.current.appendChild(script);
     }
   };
 
   // Initialize Telegram widget
   useEffect(() => {
+    console.log("Initializing Telegram widget with bot:", botName);
+    
+    // Validate bot name
+    if (!botName) {
+      console.error("Telegram bot name is not configured");
+      if (onError) {
+        onError("Telegram bot is not properly configured. Please contact administrator.");
+      }
+      return;
+    }
+    
+    // Log environment information for debugging
+    console.log("Telegram auth environment:", {
+      botName: botName,
+      apiBase: API_BASE,
+      isDev: import.meta.env.DEV,
+      domain: window.location.origin
+    });
+    
     // Set up global callback
     window.handleTelegramAuthCallback = handleTelegramResponse;
     
-    // Load Telegram script
-    const loadTelegramWidget = () => {
-      if (!document.getElementById('telegram-widget-script')) {
-        const script = document.createElement('script');
-        script.id = 'telegram-widget-script';
-        script.src = 'https://telegram.org/js/telegram-widget.js?22';
-        script.async = true;
-        script.onload = () => {
-          createTelegramWidget();
-        };
-        document.head.appendChild(script);
-      } else {
-        createTelegramWidget();
+    // Create the Telegram widget
+    createTelegramWidget();
+    
+    // Add error handling for script loading
+    const handleError = (event) => {
+      console.error("Error loading Telegram widget:", event);
+      if (onError) {
+        onError("Failed to load Telegram authentication widget. Please check your connection and try again.");
       }
     };
     
-    // Check if Telegram is already loaded
-    if (window.Telegram) {
-      createTelegramWidget();
-    } else {
-      loadTelegramWidget();
+    // Listen for script loading errors
+    const scripts = document.getElementsByTagName('script');
+    for (let i = 0; i < scripts.length; i++) {
+      if (scripts[i].src.includes('telegram-widget')) {
+        scripts[i].addEventListener('error', handleError);
+      }
     }
     
     return () => {
       // Clean up
-      const script = document.getElementById('telegram-widget-script');
-      if (script) {
-        script.remove();
-      }
       if (containerRef.current) {
         containerRef.current.innerHTML = '';
       }
@@ -120,6 +137,11 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
   return (
     <div ref={containerRef} id="telegram-login-container">
       {/* Telegram widget will be injected here */}
+      {!botName && (
+        <div style={{ color: 'red' }}>
+          Telegram bot not configured. Please set VITE_TELEGRAM_BOT_NAME in .env file.
+        </div>
+      )}
     </div>
   );
 };
