@@ -1,7 +1,5 @@
 // src/components/TelegramLogin.jsx
 import React, { useEffect, useRef } from "react";
-import Button from "@mui/material/Button";
-import TelegramIcon from "@mui/icons-material/Telegram";
 import { API_BASE } from "../services/api";
 
 const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" }) => {
@@ -62,28 +60,21 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
       });
   };
 
-  // Create Telegram widget
+  // Create Telegram widget using the approach from your widget
   const createTelegramWidget = () => {
     if (containerRef.current) {
       // Clear container
       containerRef.current.innerHTML = '';
       
-      // Create widget
+      // Create the script element for Telegram widget
       const script = document.createElement('script');
       script.async = true;
       script.src = 'https://telegram.org/js/telegram-widget.js?22';
       
-      const attributes = {
-        'data-telegram-login': botName,
-        'data-size': buttonSize,
-        'data-radius': '20',
-        'data-request-access': 'write',
-        'data-onauth': 'window.handleTelegramAuthCallback(user)'
-      };
-      
-      Object.keys(attributes).forEach(key => {
-        script.setAttribute(key, attributes[key]);
-      });
+      // Set attributes to match your widget
+      script.setAttribute('data-telegram-login', botName);
+      script.setAttribute('data-size', buttonSize);
+      script.setAttribute('data-onauth', 'window.handleTelegramAuthCallback(user)');
       
       console.log("Creating Telegram widget with bot:", botName);
       containerRef.current.appendChild(script);
@@ -114,25 +105,8 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
     // Set up global callback
     window.handleTelegramAuthCallback = handleTelegramResponse;
     
-    // Load Telegram script
-    const loadTelegramWidget = () => {
-      createTelegramWidget();
-    };
-    
-    // Check if Telegram is already loaded
-    if (window.Telegram) {
-      createTelegramWidget();
-    } else {
-      loadTelegramWidget();
-    }
-    
-    // Also recreate widget when botName or buttonSize changes
-    setTimeout(() => {
-      if (!containerRef.current?.firstChild) {
-        console.log("Recreating Telegram widget as it wasn't created properly");
-        createTelegramWidget();
-      }
-    }, 100);
+    // Create the Telegram widget
+    createTelegramWidget();
     
     // Add error handling for script loading
     const handleError = (event) => {
