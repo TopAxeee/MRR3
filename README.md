@@ -7,6 +7,7 @@ A web application for reviewing Marvel Rivals game players.
 - Player reviews and ratings
 - Leaderboard rankings
 - Telegram authentication
+- User profile with player linking
 - Admin panel for managing reviews
 
 ## Prerequisites
@@ -42,6 +43,16 @@ A web application for reviewing Marvel Rivals game players.
    - Install ngrok: https://ngrok.com/
    - Run: `ngrok http 5173`
    - Use the HTTPS URL as your domain
+
+## User Profile Feature
+
+Authenticated users can access their profile at `/myprofile` where they can:
+- Link their Telegram account to an in-game player nickname
+- View reviews they've submitted
+- View reviews on their linked player
+- Navigate to their full player profile
+
+The system implements a 10-day restriction: users can only review the same player once every 10 days.
 
 ## Development
 

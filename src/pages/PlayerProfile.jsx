@@ -6,6 +6,10 @@ import Avatar from "@mui/material/Avatar";
 import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import Divider from "@mui/material/Divider";
+import CheckIcon from "@mui/icons-material/Check";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import Link from "@mui/material/Link";
 
 import Stars from "../components/Stars";
 import ReviewForm from "../components/ReviewForm";
@@ -16,6 +20,8 @@ import {
   getPlayerByNick,
   createOrGetPlayerByName,
   addReview,
+  isAuthenticated,
+  getUserLinkedPlayer
 } from "../services/api";
 import { clamp, RANK_NAMES } from "../utils";
 
@@ -45,6 +51,7 @@ export default function PlayerProfile() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isLinkedPlayer, setIsLinkedPlayer] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,6 +61,16 @@ export default function PlayerProfile() {
         const p = await getPlayerByNick(nick);
         if (cancelled) return;
         setPlayer(p);
+        
+        // Check if this is the current user's linked player
+        if (p && isAuthenticated()) {
+          try {
+            const linkedPlayer = await getUserLinkedPlayer();
+            setIsLinkedPlayer(linkedPlayer && linkedPlayer.id === p.id);
+          } catch (err) {
+            console.error("Error checking if player is linked:", err);
+          }
+        }
         
         // Update document title when player data is loaded
         if (p && p.nickName) {
@@ -103,13 +120,55 @@ export default function PlayerProfile() {
         <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
           Not found. Create first review below!
         </Typography>
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <ReviewForm
-            initialNick={nick}
-            submitting={submitting}
-            onSubmit={handleReviewSubmit}
-          />
-        </Paper>
+        {!isAuthenticated() ? (
+          <Paper sx={{ p: 2, mb: 3, position: "relative" }}>
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: "rgba(0, 0, 0, 0.7)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 10,
+                borderRadius: 1,
+              }}
+            >
+              <Box sx={{ textAlign: "center", p: 2 }}>
+                <Typography variant="h6" color="white" sx={{ mb: 2 }}>
+                  Authentication Required
+                </Typography>
+                <Typography variant="body1" color="white" sx={{ mb: 2 }}>
+                  You need to be logged in to submit a review
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  component={Link}
+                  href="/login"
+                >
+                  Login with Telegram
+                </Button>
+              </Box>
+            </Box>
+            <ReviewForm
+              initialNick={nick}
+              submitting={submitting}
+              onSubmit={handleReviewSubmit}
+            />
+          </Paper>
+        ) : (
+          <Paper sx={{ p: 2, mb: 3 }}>
+            <ReviewForm
+              initialNick={nick}
+              submitting={submitting}
+              onSubmit={handleReviewSubmit}
+            />
+          </Paper>
+        )}
         <SuccessModal
           open={showSuccessModal}
           onClose={handleSuccessModalClose}
@@ -142,7 +201,12 @@ export default function PlayerProfile() {
             {initials}
           </Avatar>
           <div>
-            <Typography variant="h4">{player.nickName}</Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography variant="h4">{player.nickName}</Typography>
+              {isLinkedPlayer && (
+                <CheckIcon color="success" sx={{ fontSize: "1.5rem" }} />
+              )}
+            </Box>
             {player.avgGrade != null && (
               <Stars value={player.avgGrade} size="large" />
             )}
@@ -155,14 +219,55 @@ export default function PlayerProfile() {
           </div>
         </Box>
 
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <Typography variant="h6">Leave a review</Typography>
-          <ReviewForm
-            initialNick={player.nickName}
-            submitting={submitting}
-            onSubmit={handleReviewSubmit}
-          />
-        </Paper>
+        {!isAuthenticated() ? (
+          <Paper sx={{ p: 2, mb: 3, position: "relative" }}>
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: "rgba(0, 0, 0, 0.7)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 10,
+                borderRadius: 1,
+              }}
+            >
+              <Box sx={{ textAlign: "center", p: 2 }}>
+                <Typography variant="h6" color="white" sx={{ mb: 2 }}>
+                  Authentication Required
+                </Typography>
+                <Typography variant="body1" color="white" sx={{ mb: 2 }}>
+                  You need to be logged in to submit a review
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  component={Link}
+                  href="/login"
+                >
+                  Login with Telegram
+                </Button>
+              </Box>
+            </Box>
+            <ReviewForm
+              initialNick={player.nickName}
+              submitting={submitting}
+              onSubmit={handleReviewSubmit}
+            />
+          </Paper>
+        ) : (
+          <Paper sx={{ p: 2, mb: 3 }}>
+            <ReviewForm
+              initialNick={player.nickName}
+              submitting={submitting}
+              onSubmit={handleReviewSubmit}
+            />
+          </Paper>
+        )}
 
         <Divider sx={{ mb: 2 }} />
         <Typography variant="h6" sx={{ mb: 1 }}>

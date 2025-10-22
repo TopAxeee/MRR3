@@ -89,6 +89,20 @@ export default function Header() {
         
         {user ? (
           <>
+            <Button 
+              component={Link} 
+              to="/myprofile" 
+              color="inherit"
+              sx={{
+                fontWeight: 600,
+                "&:hover": {
+                  backgroundColor: "rgba(255, 255, 255, 0.1)"
+                },
+                mr: 2
+              }}
+            >
+              My Profile
+            </Button>
             <Typography 
               variant="body1" 
               sx={{ 

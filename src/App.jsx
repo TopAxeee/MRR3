@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import Leaderboard from "./pages/Leaderboard";
+import UserProfile from "./pages/UserProfile"; // Added import
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
             <Route path="/player/:nick" element={<PlayerProfile />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/myprofile" element={<UserProfile />} /> {/* Added route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Container>

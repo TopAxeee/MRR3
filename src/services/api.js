@@ -50,6 +50,47 @@ async function apiJson(url, opts = {}) {
   }
 }
 
+// User-Player linking
+export async function getUserLinkedPlayer() {
+  try {
+    const url = `${API_BASE}/users/me/player`;
+    return await apiJson(url);
+  } catch (e) {
+    if (String(e.message).startsWith("404")) {
+      return null;
+    }
+    throw e;
+  }
+}
+
+export async function linkUserToPlayer(playerId) {
+  const body = JSON.stringify({ playerId });
+  return await apiJson(`${API_BASE}/users/me/player`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+  });
+}
+
+export async function unlinkUserFromPlayer() {
+  return await apiJson(`${API_BASE}/users/me/player`, {
+    method: "DELETE",
+  });
+}
+
+// Check if user can review a player (10-day restriction)
+export async function canUserReviewPlayer(playerId) {
+  try {
+    const url = `${API_BASE}/users/me/can-review/${playerId}`;
+    const result = await apiJson(url);
+    return result?.canReview ?? true;
+  } catch (e) {
+    // If there's an error, we'll assume the user can review (fallback)
+    console.error("Error checking review permission:", e);
+    return true;
+  }
+}
+
 // Players
 export async function createOrGetPlayerByName(nickName) {
   const body = JSON.stringify({ nickName });
@@ -115,6 +156,48 @@ export async function listAllPlayers() {
 export async function fetchReviewsByPlayer(playerNick, days = 30) {
   try {
     const url = `${API_BASE}/reviews/nick/${encodeURIComponent(playerNick)}`;
+    const list = await apiJson(url);
+    return Array.isArray(list)
+      ? list.map((review) => ({
+          id: review.id,
+          comment: review.review,
+          createdAt: review.created,
+          grade: review.grade,
+          rank: review.rank,
+          screenshotUrl: review.image,
+          author: review.owner?.userName || "Anonymous",
+        }))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+// Fetch reviews by current user
+export async function fetchReviewsByUser() {
+  try {
+    const url = `${API_BASE}/users/me/reviews`;
+    const list = await apiJson(url);
+    return Array.isArray(list)
+      ? list.map((review) => ({
+          id: review.id,
+          comment: review.review,
+          createdAt: review.created,
+          grade: review.grade,
+          rank: review.rank,
+          screenshotUrl: review.image,
+          playerNick: review.player?.nickName || "Unknown Player",
+        }))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+// Fetch reviews on current user's linked player
+export async function fetchReviewsOnLinkedPlayer() {
+  try {
+    const url = `${API_BASE}/users/me/player/reviews`;
     const list = await apiJson(url);
     return Array.isArray(list)
       ? list.map((review) => ({

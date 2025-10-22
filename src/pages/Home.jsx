@@ -5,11 +5,15 @@ import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
+import Paper from "@mui/material/Paper";
+import Button from "@mui/material/Button";
+import Link from "@mui/material/Link";
+import Alert from "@mui/material/Alert";
 
 import PlayersGrid from "../components/PlayersGrid";
 import ReviewForm from "../components/ReviewForm";
 import SuccessModal from "../components/SuccessModal";
-import { searchPlayers, listAllPlayers, createOrGetPlayerByName, addReview } from "../services/api";
+import { searchPlayers, listAllPlayers, createOrGetPlayerByName, addReview, isAuthenticated } from "../services/api";
 import { useDebouncedValue } from "../utils";
 
 // Function to get random items from an array
@@ -36,92 +40,132 @@ export default function Home() {
     let cancelled = false;
     setLoading(true);
     (async () => {
-      try {
-        if (debounced) {
-          const list = await searchPlayers(debounced, 8);
-          if (!cancelled) setResults(list);
-        } else {
-          const allPlayers = await listAllPlayers();
-          const randomSelection = getRandomItems(allPlayers, 8);
-          if (!cancelled) setRandomPlayers(randomSelection);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+      const list = await listAllPlayers();
+      if (!cancelled) setRandomPlayers(getRandomItems(list, 8));
+      if (!cancelled) setLoading(false);
     })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (debounced) {
+      setLoading(true);
+      (async () => {
+        const list = await searchPlayers(debounced);
+        if (!cancelled) setResults(list);
+        if (!cancelled) setLoading(false);
+      })();
+    } else {
+      if (!cancelled) setResults([]);
+    }
     return () => {
       cancelled = true;
     };
   }, [debounced]);
 
-  const handleSuccessModalClose = () => {
-    setShowSuccessModal(false);
-    window.location.reload();
+  const handleSubmit = async (f) => {
+    try {
+      setSubmitting(true);
+      const p = await createOrGetPlayerByName(f.playerNick);
+      await addReview({
+        playerId: p.id,
+        rank: f.rank,
+        grade: f.grade,
+        review: f.comment,
+      });
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error("Error submitting review:", error);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <Container sx={{ py: 4 }}>
-      <Box sx={{ my: 2 }}>
-        <TextField
-          fullWidth
-          label="Search player by nickname"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-      </Box>
-      {debounced ? (
-        <>
-          <Typography variant="h6" sx={{ mb: 1 }}>
-            Search results
-          </Typography>
-          <Container sx={{ py: 4 }}>
-            <PlayersGrid items={results} />
-          </Container>
-        </>
-      ) : (
-        <>
-          <Typography variant="h6" sx={{ mb: 1 }}>
-            Random players
-          </Typography>
-          <PlayersGrid items={randomPlayers} />
-        </>
-      )}
-      {loading && (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-          Loading...
+    <Container>
+      <Box sx={{ mb: 4, textAlign: "center" }}>
+        <Typography variant="h2" component="h1" sx={{ mb: 2, fontWeight: "bold" }}>
+          Marvel Rivals Reviews
         </Typography>
+        <Typography variant="h5" color="text.secondary">
+          Rate and review Marvel Rivals players
+        </Typography>
+      </Box>
+
+      {!isAuthenticated() ? (
+        <Paper sx={{ p: 2, mb: 3, position: "relative" }}>
+          <Box
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.7)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 10,
+              borderRadius: 1,
+            }}
+          >
+            <Box sx={{ textAlign: "center", p: 2 }}>
+              <Typography variant="h6" color="white" sx={{ mb: 2 }}>
+                Authentication Required
+              </Typography>
+              <Typography variant="body1" color="white" sx={{ mb: 2 }}>
+                You need to be logged in to submit a review
+              </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                component={Link}
+                href="/login"
+              >
+                Login with Telegram
+              </Button>
+            </Box>
+          </Box>
+          <ReviewForm submitting={submitting} onSubmit={handleSubmit} />
+        </Paper>
+      ) : (
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <ReviewForm submitting={submitting} onSubmit={handleSubmit} />
+        </Paper>
       )}
-      <Divider sx={{ my: 4 }} />
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        Quick review
-      </Typography>
-      <ReviewForm
-        submitting={submitting}
-        onSubmit={async (f) => {
-          try {
-            setSubmitting(true);
-            const p = await createOrGetPlayerByName(f.playerNick);
-            await addReview({
-              playerId: p.id,
-              rank: f.rank,
-              grade: f.grade,
-              review: f.comment,
-            });
-            setShowSuccessModal(true);
-          } catch (error) {
-            console.error("Error submitting review:", error);
-          } finally {
-            setSubmitting(false);
-          }
-        }}
-      />
 
       <SuccessModal
         open={showSuccessModal}
-        onClose={handleSuccessModalClose}
+        onClose={() => setShowSuccessModal(false)}
         title="Review Submitted!"
-        message="Your review has been submitted successfully. The page will refresh to show your changes."
+        message="Your review has been submitted successfully."
       />
+
+      <Divider sx={{ my: 4 }} />
+
+      <Typography variant="h4" sx={{ mb: 2 }}>
+        Search Players
+      </Typography>
+      <TextField
+        fullWidth
+        label="Search by nickname"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        sx={{ mb: 3 }}
+      />
+      <PlayersGrid players={results.length ? results : randomPlayers} loading={loading} />
+
+      <Divider sx={{ my: 4 }} />
+
+      <Alert severity="info" sx={{ mb: 2 }}>
+        <Typography variant="body1">
+          <strong>How it works:</strong> Search for a player by nickname, then submit a review with their rank and rating.
+          All reviews are anonymous - your identity is only visible to admins.
+        </Typography>
+      </Alert>
     </Container>
   );
 }
