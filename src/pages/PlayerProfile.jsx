@@ -120,55 +120,13 @@ export default function PlayerProfile() {
         <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
           Not found. Create first review below!
         </Typography>
-        {!isAuthenticated() ? (
-          <Paper sx={{ p: 2, mb: 3, position: "relative" }}>
-            <Box
-              sx={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: "rgba(0, 0, 0, 0.7)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 10,
-                borderRadius: 1,
-              }}
-            >
-              <Box sx={{ textAlign: "center", p: 2 }}>
-                <Typography variant="h6" color="white" sx={{ mb: 2 }}>
-                  Authentication Required
-                </Typography>
-                <Typography variant="body1" color="white" sx={{ mb: 2 }}>
-                  You need to be logged in to submit a review
-                </Typography>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  component={Link}
-                  href="/login"
-                >
-                  Login with Telegram
-                </Button>
-              </Box>
-            </Box>
-            <ReviewForm
-              initialNick={nick}
-              submitting={submitting}
-              onSubmit={handleReviewSubmit}
-            />
-          </Paper>
-        ) : (
-          <Paper sx={{ p: 2, mb: 3 }}>
-            <ReviewForm
-              initialNick={nick}
-              submitting={submitting}
-              onSubmit={handleReviewSubmit}
-            />
-          </Paper>
-        )}
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <ReviewForm
+            initialNick={nick}
+            submitting={submitting}
+            onSubmit={handleReviewSubmit}
+          />
+        </Paper>
         <SuccessModal
           open={showSuccessModal}
           onClose={handleSuccessModalClose}
@@ -210,7 +168,8 @@ export default function PlayerProfile() {
             {player.avgGrade != null && (
               <Stars value={player.avgGrade} size="large" />
             )}
-            {/* Using RankBadge component instead of plain text */}
+            {/* Using RankBadge component instead of plain text */
+            }
             {rankValue != null ? (
               <RankBadge rank={rankValue} size="large" />
             ) : (
@@ -219,55 +178,13 @@ export default function PlayerProfile() {
           </div>
         </Box>
 
-        {!isAuthenticated() ? (
-          <Paper sx={{ p: 2, mb: 3, position: "relative" }}>
-            <Box
-              sx={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: "rgba(0, 0, 0, 0.7)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 10,
-                borderRadius: 1,
-              }}
-            >
-              <Box sx={{ textAlign: "center", p: 2 }}>
-                <Typography variant="h6" color="white" sx={{ mb: 2 }}>
-                  Authentication Required
-                </Typography>
-                <Typography variant="body1" color="white" sx={{ mb: 2 }}>
-                  You need to be logged in to submit a review
-                </Typography>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  component={Link}
-                  href="/login"
-                >
-                  Login with Telegram
-                </Button>
-              </Box>
-            </Box>
-            <ReviewForm
-              initialNick={player.nickName}
-              submitting={submitting}
-              onSubmit={handleReviewSubmit}
-            />
-          </Paper>
-        ) : (
-          <Paper sx={{ p: 2, mb: 3 }}>
-            <ReviewForm
-              initialNick={player.nickName}
-              submitting={submitting}
-              onSubmit={handleReviewSubmit}
-            />
-          </Paper>
-        )}
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <ReviewForm
+            initialNick={player.nickName}
+            submitting={submitting}
+            onSubmit={handleReviewSubmit}
+          />
+        </Paper>
 
         <Divider sx={{ mb: 2 }} />
         <Typography variant="h6" sx={{ mb: 1 }}>
