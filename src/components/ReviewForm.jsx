@@ -16,7 +16,7 @@ import Link from "@mui/material/Link";
 import { RANK_NAMES } from "../utils";
 import { canUserReviewPlayer, getPlayerByNick, isAuthenticated } from "../services/api";
 
-export default function ReviewForm({ initialNick = "", onSubmit, submitting = false }) {
+export default function ReviewForm({ initialNick = "", onSubmit, submitting = false, isPlayerProfile = false }) {
   const [playerNick, setPlayerNick] = useState(initialNick);
   const [rank, setRank] = useState("");
   const [grade, setGrade] = useState(0);
@@ -124,7 +124,7 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
           value={playerNick}
           onChange={(e) => setPlayerNick(e.target.value)}
           required
-          disabled={submitting || !userAuthenticated}
+          disabled={submitting || !userAuthenticated || isPlayerProfile}
         />
 
         {!canReview && (

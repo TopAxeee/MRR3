@@ -125,6 +125,7 @@ export default function PlayerProfile() {
             initialNick={nick}
             submitting={submitting}
             onSubmit={handleReviewSubmit}
+            isPlayerProfile={true}
           />
         </Paper>
         <SuccessModal
@@ -183,6 +184,7 @@ export default function PlayerProfile() {
             initialNick={player.nickName}
             submitting={submitting}
             onSubmit={handleReviewSubmit}
+            isPlayerProfile={true}
           />
         </Paper>
 
