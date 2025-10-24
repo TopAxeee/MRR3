@@ -19,7 +19,7 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
     }
     
     // Send the data to your backend for validation
-    fetch(`${API_BASE}/api/auth/telegram`, {
+    fetch(`${API_BASE}/auth/telegram`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
