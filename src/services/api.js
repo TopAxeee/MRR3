@@ -26,10 +26,11 @@ export function logout() {
 async function apiJson(url, opts = {}) {
   // Add user ID to headers if available
   const userId = getUserId();
+  const currentUser = getCurrentUser();
   if (userId) {
     opts.headers = {
       ...opts.headers,
-      "X-Mrr-User-Id": userId
+      //"X-Mrr-User-Id": currentUser
     };
   }
   
