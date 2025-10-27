@@ -55,10 +55,11 @@ async function apiJson(url, opts = {}) {
 export async function getUserLinkedPlayer() {
   try {
     // First get user data to find linked player
-    const userId = getUserId();
-    if (!userId) return null;
+
+    const currentUser = getCurrentUser();
+    if (!currentUser || !currentUser.id) throw new Error("User not authenticated");
     
-    const user = await apiJson(`${API_BASE}/api/users/${userId}`);
+    const user = await apiJson(`${API_BASE}/api/users/${currentUser}`);
     if (user && user.playerDto) {
       return user.playerDto;
     }
