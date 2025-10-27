@@ -15,7 +15,7 @@ export function getCurrentUser() {
 // Get user ID from Telegram user data
 export function getUserId() {
   const user = getCurrentUser();
-  return user?.id;
+  return user?.telegramId;
 }
 
 // Logout user
@@ -57,9 +57,9 @@ export async function getUserLinkedPlayer() {
     // First get user data to find linked player
 
     const currentUser = getCurrentUser();
-    if (!currentUser || !currentUser.id) throw new Error("User not authenticated");
+    if (!currentUser || !currentUser.telegramId) throw new Error("User not authenticated");
     
-    const user = await apiJson(`${API_BASE}/api/users/${currentUser}`);
+    const user = await apiJson(`${API_BASE}/api/users/${currentUser.telegramId}`);
     if (user && user.playerDto) {
       return user.playerDto;
     }
@@ -74,10 +74,10 @@ export async function getUserLinkedPlayer() {
 
 export async function linkUserToPlayer(playerId) {
   const currentUser = getCurrentUser();
-  if (!currentUser || !currentUser.id) throw new Error("User not authenticated");
+  if (!currentUser || !currentUser.telegramId) throw new Error("User not authenticated");
   
   // Using PATCH /api/users/{telegramId} with playerId query param
-  return await apiJson(`${API_BASE}/api/users/${currentUser.id}?playerId=${playerId}`, {
+  return await apiJson(`${API_BASE}/api/users/${currentUser.telegramId}?playerId=${playerId}`, {
     method: "PATCH",
   });
 }
