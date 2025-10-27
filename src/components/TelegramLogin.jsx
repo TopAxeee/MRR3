@@ -6,9 +6,7 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
   const containerRef = useRef(null);
 
   // Handle Telegram authentication response
-  const handleTelegramResponse = (data) => {
-    console.log("Telegram auth data received:", data);
-    
+  const handleTelegramResponse = (data) => {    
     // Validate that we received data
     if (!data || !data.id) {
       console.error("Invalid Telegram auth data received:", data);
@@ -27,14 +25,12 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
       body: JSON.stringify({ authData: data }),
     })
       .then((response) => {
-        console.log("Backend response status:", response.status);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
       })
       .then((result) => {
-        console.log("Backend response data:", result);
         if (result.success) {
           // Store both user info and session token
           localStorage.setItem("telegramUser", JSON.stringify(result.user));
@@ -76,14 +72,12 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
       script.setAttribute('data-size', buttonSize);
       script.setAttribute('data-onauth', 'window.handleTelegramAuthCallback(user)');
       
-      console.log("Creating Telegram widget with bot:", botName);
       containerRef.current.appendChild(script);
     }
   };
 
   // Initialize Telegram widget
   useEffect(() => {
-    console.log("Initializing Telegram widget with bot:", botName);
     
     // Validate bot name
     if (!botName) {
@@ -93,14 +87,6 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
       }
       return;
     }
-    
-    // Log environment information for debugging
-    console.log("Telegram auth environment:", {
-      botName: botName,
-      apiBase: API_BASE,
-      isDev: import.meta.env.DEV,
-      domain: window.location.origin
-    });
     
     // Set up global callback
     window.handleTelegramAuthCallback = handleTelegramResponse;
