@@ -71,11 +71,11 @@ export async function getUserLinkedPlayer() {
 }
 
 export async function linkUserToPlayer(playerId) {
-  const userId = getUserId();
-  if (!userId) throw new Error("User not authenticated");
+  const currentUser = getCurrentUser();
+  if (!currentUser || !currentUser.id) throw new Error("User not authenticated");
   
   // Using PATCH /api/users/{telegramId} with playerId query param
-  return await apiJson(`${API_BASE}/api/users/${userId}?playerId=${playerId}`, {
+  return await apiJson(`${API_BASE}/api/users/${currentUser.id}?playerId=${playerId}`, {
     method: "PATCH",
   });
 }
