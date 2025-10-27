@@ -1,9 +1,9 @@
 // src/services/api.js
-export const API_BASE = import.meta.env?.VITE_API_BASE || "https://marvel-rivals-reviews.onrender.com/api";
+export const API_BASE = import.meta.env?.VITE_API_BASE || "https://marvel-rivals-reviews.onrender.com";
 
 // Check if user is authenticated
 export function isAuthenticated() {
-  return !!localStorage.getItem("telegramUser") && !!localStorage.getItem("sessionToken");
+  return !!localStorage.getItem("telegramUser");
 }
 
 // Get current user
@@ -12,24 +12,24 @@ export function getCurrentUser() {
   return userStr ? JSON.parse(userStr) : null;
 }
 
-// Get session token
-export function getSessionToken() {
-  return localStorage.getItem("sessionToken");
+// Get user ID from Telegram user data
+export function getUserId() {
+  const user = getCurrentUser();
+  return user?.id;
 }
 
 // Logout user
 export function logout() {
   localStorage.removeItem("telegramUser");
-  localStorage.removeItem("sessionToken");
 }
 
 async function apiJson(url, opts = {}) {
-  // Add session token to headers if available
-  const token = getSessionToken();
-  if (token) {
+  // Add user ID to headers if available
+  const userId = getUserId();
+  if (userId) {
     opts.headers = {
       ...opts.headers,
-      "Authorization": `Bearer ${token}`
+      "X-Mrr-User-Id": userId
     };
   }
   
@@ -50,11 +50,18 @@ async function apiJson(url, opts = {}) {
   }
 }
 
-// User-Player linking
+// User-Player linking (not directly supported by API, using user endpoint instead)
 export async function getUserLinkedPlayer() {
   try {
-    const url = `${API_BASE}/users/me/player`;
-    return await apiJson(url);
+    // First get user data to find linked player
+    const userId = getUserId();
+    if (!userId) return null;
+    
+    const user = await apiJson(`${API_BASE}/api/users/${userId}`);
+    if (user && user.playerDto) {
+      return user.playerDto;
+    }
+    return null;
   } catch (e) {
     if (String(e.message).startsWith("404")) {
       return null;
@@ -64,54 +71,44 @@ export async function getUserLinkedPlayer() {
 }
 
 export async function linkUserToPlayer(playerId) {
-  const body = JSON.stringify({ playerId });
-  return await apiJson(`${API_BASE}/users/me/player`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body,
+  const userId = getUserId();
+  if (!userId) throw new Error("User not authenticated");
+  
+  // Using PATCH /api/users/{telegramId} with playerId query param
+  return await apiJson(`${API_BASE}/api/users/${userId}?playerId=${playerId}`, {
+    method: "PATCH",
   });
 }
 
 export async function unlinkUserFromPlayer() {
-  return await apiJson(`${API_BASE}/users/me/player`, {
-    method: "DELETE",
-  });
+  const userId = getUserId();
+  if (!userId) throw new Error("User not authenticated");
+  
+  // To unlink, we would need to set playerId to null, but this isn't supported by the API
+  // We'll throw an error since the API doesn't support unlinking
+  throw new Error("Unlinking player not supported by API");
 }
 
 // Check if user can review a player (10-day restriction)
+// This endpoint doesn't exist in the current API, so we'll skip this functionality
 export async function canUserReviewPlayer(playerId) {
-  try {
-    const url = `${API_BASE}/users/me/can-review/${playerId}`;
-    const result = await apiJson(url);
-    return result?.canReview ?? true;
-  } catch (e) {
-    // If there's an error, we'll assume the user can review (fallback)
-    console.error("Error checking review permission:", e);
-    return true;
-  }
+  // Since this endpoint doesn't exist, we'll assume the user can review
+  return true;
 }
 
 // Players
 export async function createOrGetPlayerByName(nickName) {
   const body = JSON.stringify({ nickName });
   try {
-    return await apiJson(`${API_BASE}/players`, {
+    return await apiJson(`${API_BASE}/api/players`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body,
     });
   } catch (e) {
     if (String(e.message).startsWith("409 ")) {
-      const tryUrls = [
-        `${API_BASE}/players/nick/${encodeURIComponent(nickName)}`,
-      ];
-      for (const u of tryUrls) {
-        try {
-          return await apiJson(u);
-        } catch {}
-      }
-      const list = await searchPlayers(nickName, 1);
-      if (list && list.length) return list[0];
+      // Player already exists, fetch by nick
+      return await getPlayerByNick(nickName);
     }
     throw e;
   }
@@ -119,8 +116,7 @@ export async function createOrGetPlayerByName(nickName) {
 
 export async function getPlayerByNick(nick) {
   try {
-    // Updated to use the new endpoint for getting a player by nickname
-    const url = `${API_BASE}/players/nick/${encodeURIComponent(nick)}`;
+    const url = `${API_BASE}/api/players/nick/${encodeURIComponent(nick)}`;
     return await apiJson(url);
   } catch (e) {
     if (String(e.message).startsWith("404")) {
@@ -132,22 +128,20 @@ export async function getPlayerByNick(nick) {
 
 export async function searchPlayers(query, limit = 12) {
   if (!query) return listRecentPlayers(limit);
-  // Updated to use the new search endpoint
-  const url = `${API_BASE}/players/search?nick=${encodeURIComponent(query)}`;
+  const url = `${API_BASE}/api/players/search?nick=${encodeURIComponent(query)}&limit=${limit}`;
   const list = await apiJson(url);
-  return Array.isArray(list) ? list.slice(0, limit) : [];
+  return Array.isArray(list) ? list : [];
 }
 
 export async function listRecentPlayers(limit = 12) {
-  const url = `${API_BASE}/players?limit=${limit}`;
+  const url = `${API_BASE}/api/players?limit=${limit}`;
   const list = await apiJson(url);
   return Array.isArray(list) ? list : [];
 }
 
 export async function listAllPlayers() {
   // Fetch all players for leaderboard
-  // Note: In a production environment, this should be paginated
-  const url = `${API_BASE}/players?limit=1000`;
+  const url = `${API_BASE}/api/players?limit=1000`;
   const list = await apiJson(url);
   return Array.isArray(list) ? list : [];
 }
@@ -155,7 +149,7 @@ export async function listAllPlayers() {
 // Reviews
 export async function fetchReviewsByPlayer(playerNick, days = 30) {
   try {
-    const url = `${API_BASE}/reviews/nick/${encodeURIComponent(playerNick)}`;
+    const url = `${API_BASE}/api/reviews/nick/${encodeURIComponent(playerNick)}`;
     const list = await apiJson(url);
     return Array.isArray(list)
       ? list.map((review) => ({
@@ -176,7 +170,10 @@ export async function fetchReviewsByPlayer(playerNick, days = 30) {
 // Fetch reviews by current user
 export async function fetchReviewsByUser() {
   try {
-    const url = `${API_BASE}/users/me/reviews`;
+    const userId = getUserId();
+    if (!userId) return [];
+    
+    const url = `${API_BASE}/api/reviews/user/${userId}`;
     const list = await apiJson(url);
     return Array.isArray(list)
       ? list.map((review) => ({
@@ -195,9 +192,15 @@ export async function fetchReviewsByUser() {
 }
 
 // Fetch reviews on current user's linked player
+// This functionality isn't directly supported by the API
 export async function fetchReviewsOnLinkedPlayer() {
+  // We can't directly fetch reviews on a player without knowing the player ID
+  // This would require first getting the user's linked player, then fetching reviews for that player
   try {
-    const url = `${API_BASE}/users/me/player/reviews`;
+    const player = await getUserLinkedPlayer();
+    if (!player) return [];
+    
+    const url = `${API_BASE}/api/reviews/nick/${encodeURIComponent(player.nickName)}`;
     const list = await apiJson(url);
     return Array.isArray(list)
       ? list.map((review) => ({
@@ -217,22 +220,11 @@ export async function fetchReviewsOnLinkedPlayer() {
 
 export async function addReview(payload) {
   try {
-    // Get user ID from local storage
-    const currentUser = getCurrentUser();
-    const userId = currentUser?.id;
-    
-    const headers = {
-      "Content-Type": "application/json",
-    };
-    
-    // Add user ID header if available
-    if (userId) {
-      headers["X-Mrr-User-Id"] = userId;
-    }
-    
-    const res = await apiJson(`${API_BASE}/reviews`, {
+    const res = await apiJson(`${API_BASE}/api/reviews`, {
       method: "POST",
-      headers,
+      headers: { 
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(payload),
     });
     return res?.id ?? null;
