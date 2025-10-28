@@ -25,7 +25,8 @@ export default function ReviewItem({ review }) {
       >
         <Box>
           <Typography variant="subtitle1">
-            {review.author ?? "Anonymous"}
+            {"Anonymous"} 
+            {/* review.author ??  */}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {new Date(review.createdAt ?? Date.now()).toLocaleString()}

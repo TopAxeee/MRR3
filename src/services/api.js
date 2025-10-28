@@ -24,13 +24,12 @@ export function logout() {
 }
 
 async function apiJson(url, opts = {}) {
-  // Add user ID to headers if available
+  // Add telegram ID to headers if available
   const userId = getUserId();
-  const currentUser = getCurrentUser();
   if (userId) {
     opts.headers = {
       ...opts.headers,
-      //"X-Mrr-User-Id": currentUser
+      "X-Mrr-User-Id": userId
     };
   }
   
