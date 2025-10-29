@@ -179,7 +179,7 @@ export async function listAllPlayers() {
 // GET /api/reviews/nick/{nick} - Получить отзывы игрока
 export async function fetchReviewsByPlayer(playerNick, days = 30) {
   try {
-    const url = `${API_BASE}/api/reviews/nick/${encodeURIComponent(playerNick)}`;
+    const url = `${API_BASE}/api/reviews/nick/${playerNick}`;
     const list = await apiHeaders(url);
     return Array.isArray(list)
       ? list.map((review) => ({
