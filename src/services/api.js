@@ -1,30 +1,38 @@
 // src/services/api.js
 export const API_BASE = import.meta.env?.VITE_API_BASE || "https://marvel-rivals-reviews.onrender.com";
 
-// Check if user is authenticated
+// =============================================================================
+// AUTHENTICATION FUNCTIONS
+// =============================================================================
+
+// Проверка авторизованности пользователя
 export function isAuthenticated() {
   return !!localStorage.getItem("telegramUser");
 }
 
-// Get current user
+// Получить текущего пользователя
 export function getCurrentUser() {  
   const userStr = localStorage.getItem("telegramUser");
   return userStr ? JSON.parse(userStr) : null;
 }
 
-// Get user ID from Telegram user data
+// Получить Telegram ID текущего пользователя
 export function getUserId() {
   const user = getCurrentUser();
   return user?.telegramId;
 }
 
-// Logout user
+// Выход пользователя (убираем данные из локального хранилища)
 export function logout() {
   localStorage.removeItem("telegramUser");
 }
 
-async function apiJson(url, opts = {}) {
-  // Add telegram ID to headers if available
+// =============================================================================
+// API HELPER FUNCTIONS
+// =============================================================================
+
+// Добавление Telegram ID в каждый заголовок
+async function apiHeaders(url, opts = {}) {
   const userId = getUserId();
   if (userId) {
     opts.headers = {
@@ -32,7 +40,6 @@ async function apiJson(url, opts = {}) {
       "X-Mrr-User-Id": userId
     };
   }
-  
   const res = await fetch(url, opts);
   if (!res.ok) {
     const text = await res.text();
@@ -50,7 +57,11 @@ async function apiJson(url, opts = {}) {
   }
 }
 
-// User-Player linking (not directly supported by API, using user endpoint instead)
+// =============================================================================
+// USER CONTROLLER
+// =============================================================================
+
+// GET /api/users - Получить пользователя по TelegramId
 export async function getUserLinkedPlayer() {
   try {
     // First get user data to find linked player
@@ -58,7 +69,7 @@ export async function getUserLinkedPlayer() {
     const currentUser = getCurrentUser();
     if (!currentUser || !currentUser.telegramId) throw new Error("User not authenticated");
     
-    const user = await apiJson(`${API_BASE}/api/users/${currentUser.telegramId}`);
+    const user = await apiHeaders(`${API_BASE}/api/users`);
     if (user && user.playerDto) {
       return user.playerDto;
     }
@@ -71,12 +82,13 @@ export async function getUserLinkedPlayer() {
   }
 }
 
+// PATCH /api/users - Привязать игрока к пользователю
 export async function linkUserToPlayer(playerId) {
-  const currentUser = getCurrentUser();
-  if (!currentUser || !currentUser.telegramId) throw new Error("User not authenticated");
+  const userId = getUserId();
+  if (!userId) throw new Error("User not authenticated");
   
-  // Using PATCH /api/users/{telegramId} with playerId query param
-  return await apiJson(`${API_BASE}/api/users/${currentUser.telegramId}?playerId=${playerId}`, {
+  // Using PATCH /api/users with playerId query param
+  return await apiHeaders(`${API_BASE}/api/users?playerId=${playerId}`, {
     method: "PATCH",
   });
 }
@@ -97,11 +109,18 @@ export async function canUserReviewPlayer(playerId) {
   return true;
 }
 
-// Players
+// GET /api/users/all - Получить всех пользователей
+// Not implemented yet
+
+// =============================================================================
+// PLAYER CONTROLLER
+// =============================================================================
+
+// POST /api/players - Создать нового игрока
 export async function createOrGetPlayerByName(nickName) {
   const body = JSON.stringify({ nickName });
   try {
-    return await apiJson(`${API_BASE}/api/players`, {
+    return await apiHeaders(`${API_BASE}/api/players`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body,
@@ -115,10 +134,11 @@ export async function createOrGetPlayerByName(nickName) {
   }
 }
 
+// GET /api/players/nick/{nick} - Получить игрока
 export async function getPlayerByNick(nick) {
   try {
     const url = `${API_BASE}/api/players/nick/${encodeURIComponent(nick)}`;
-    return await apiJson(url);
+    return await apiHeaders(url);
   } catch (e) {
     if (String(e.message).startsWith("404")) {
       return null;
@@ -127,31 +147,40 @@ export async function getPlayerByNick(nick) {
   }
 }
 
+// GET /api/players/search - Поиск игрока по нику (части ника)
 export async function searchPlayers(query, limit = 12) {
   if (!query) return listRecentPlayers(limit);
   const url = `${API_BASE}/api/players/search?nick=${encodeURIComponent(query)}&limit=${limit}`;
-  const list = await apiJson(url);
+  const list = await apiHeaders(url);
   return Array.isArray(list) ? list : [];
 }
 
+// GET /api/players - Получить всех игроков. Сортировка по "свежести" создания
 export async function listRecentPlayers(limit = 12) {
   const url = `${API_BASE}/api/players?limit=${limit}`;
-  const list = await apiJson(url);
+  const list = await apiHeaders(url);
   return Array.isArray(list) ? list : [];
 }
 
 export async function listAllPlayers() {
   // Fetch all players for leaderboard
   const url = `${API_BASE}/api/players?limit=1000`;
-  const list = await apiJson(url);
+  const list = await apiHeaders(url);
   return Array.isArray(list) ? list : [];
 }
 
-// Reviews
+// PATCH /api/players/{nick} - Загрузить изображение для игрока (ignored as per request)
+// Not implemented
+
+// =============================================================================
+// REVIEW CONTROLLER
+// =============================================================================
+
+// GET /api/reviews/nick/{nick} - Получить отзывы игрока
 export async function fetchReviewsByPlayer(playerNick, days = 30) {
   try {
     const url = `${API_BASE}/api/reviews/nick/${encodeURIComponent(playerNick)}`;
-    const list = await apiJson(url);
+    const list = await apiHeaders(url);
     return Array.isArray(list)
       ? list.map((review) => ({
           id: review.id,
@@ -168,14 +197,14 @@ export async function fetchReviewsByPlayer(playerNick, days = 30) {
   }
 }
 
-// Fetch reviews by current user
+// GET /api/reviews/user - Получить отзывы пользователя
 export async function fetchReviewsByUser() {
   try {
     const userId = getUserId();
     if (!userId) return [];
     
-    const url = `${API_BASE}/api/reviews/user/${userId}`;
-    const list = await apiJson(url);
+    const url = `${API_BASE}/api/reviews/user`;
+    const list = await apiHeaders(url);
     return Array.isArray(list)
       ? list.map((review) => ({
           id: review.id,
@@ -202,7 +231,7 @@ export async function fetchReviewsOnLinkedPlayer() {
     if (!player) return [];
     
     const url = `${API_BASE}/api/reviews/nick/${encodeURIComponent(player.nickName)}`;
-    const list = await apiJson(url);
+    const list = await apiHeaders(url);
     return Array.isArray(list)
       ? list.map((review) => ({
           id: review.id,
@@ -219,9 +248,10 @@ export async function fetchReviewsOnLinkedPlayer() {
   }
 }
 
+// POST /api/reviews - Создать отзыв
 export async function addReview(payload) {
   try {
-    const res = await apiJson(`${API_BASE}/api/reviews`, {
+    const res = await apiHeaders(`${API_BASE}/api/reviews`, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
@@ -234,3 +264,6 @@ export async function addReview(payload) {
     return null;
   }
 }
+
+// PATCH /api/reviews/{id} - Загрузить изображение для отзыва (ignored as per request)
+// Not implemented
