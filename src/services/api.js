@@ -177,12 +177,37 @@ export async function listAllPlayers() {
 // =============================================================================
 
 // GET /api/reviews/nick/{nick} - Получить отзывы игрока
-export async function fetchReviewsByPlayer(playerNick, days = 30) {
+// Updated to support pagination
+export async function fetchReviewsByPlayer(playerNick, days = 30, page = 0, limit = 10) {
   try {
-    const url = `${API_BASE}/api/reviews/nick/${playerNick}`;
-    const list = await apiHeaders(url);
-    return Array.isArray(list)
-      ? list.map((review) => ({
+    const url = `${API_BASE}/api/reviews/nick/${playerNick}?page=${page}&limit=${limit}`;
+    const response = await apiHeaders(url);
+    
+    // Handle paginated response
+    if (response && typeof response === 'object' && 'content' in response) {
+      // Backend pagination response format
+      return {
+        items: Array.isArray(response.content) 
+          ? response.content.map((review) => ({
+              id: review.id,
+              comment: review.review,
+              createdAt: review.created,
+              grade: review.grade,
+              rank: review.rank,
+              screenshotUrl: review.image,
+              author: review.owner?.userName || "Anonymous",
+            }))
+          : [],
+        totalPages: response.totalPages || 0,
+        currentPage: response.page || page,
+        totalElements: response.totalElements || 0,
+        limit: response.size || limit
+      };
+    } else {
+      // Fallback to previous behavior for non-paginated response
+      const list = Array.isArray(response) ? response : [];
+      return {
+        items: list.map((review) => ({
           id: review.id,
           comment: review.review,
           createdAt: review.created,
@@ -190,10 +215,21 @@ export async function fetchReviewsByPlayer(playerNick, days = 30) {
           rank: review.rank,
           screenshotUrl: review.image,
           author: review.owner?.userName || "Anonymous",
-        }))
-      : [];
+        })),
+        totalPages: 1,
+        currentPage: 0,
+        totalElements: list.length,
+        limit: limit
+      };
+    }
   } catch {
-    return [];
+    return {
+      items: [],
+      totalPages: 0,
+      currentPage: 0,
+      totalElements: 0,
+      limit: limit
+    };
   }
 }
 
@@ -222,18 +258,48 @@ export async function fetchReviewsByUser() {
 }
 
 // Fetch reviews on current user's linked player
-// This functionality isn't directly supported by the API
-export async function fetchReviewsOnLinkedPlayer() {
+// Updated to support pagination
+export async function fetchReviewsOnLinkedPlayer(page = 0, limit = 10) {
   // We can't directly fetch reviews on a player without knowing the player ID
   // This would require first getting the user's linked player, then fetching reviews for that player
   try {
     const player = await getUserLinkedPlayer();
-    if (!player) return [];
+    if (!player) return {
+      items: [],
+      totalPages: 0,
+      currentPage: 0,
+      totalElements: 0,
+      limit: limit
+    };
     
-    const url = `${API_BASE}/api/reviews/nick/${encodeURIComponent(player.nickName)}`;
-    const list = await apiHeaders(url);
-    return Array.isArray(list)
-      ? list.map((review) => ({
+    const url = `${API_BASE}/api/reviews/nick/${encodeURIComponent(player.nickName)}?page=${page}&limit=${limit}`;
+    const response = await apiHeaders(url);
+    
+    // Handle paginated response
+    if (response && typeof response === 'object' && 'content' in response) {
+      // Backend pagination response format
+      return {
+        items: Array.isArray(response.content) 
+          ? response.content.map((review) => ({
+              id: review.id,
+              comment: review.review,
+              createdAt: review.created,
+              grade: review.grade,
+              rank: review.rank,
+              screenshotUrl: review.image,
+              author: review.owner?.userName || "Anonymous",
+            }))
+          : [],
+        totalPages: response.totalPages || 0,
+        currentPage: response.page || page,
+        totalElements: response.totalElements || 0,
+        limit: response.size || limit
+      };
+    } else {
+      // Fallback to previous behavior for non-paginated response
+      const list = Array.isArray(response) ? response : [];
+      return {
+        items: list.map((review) => ({
           id: review.id,
           comment: review.review,
           createdAt: review.created,
@@ -241,10 +307,21 @@ export async function fetchReviewsOnLinkedPlayer() {
           rank: review.rank,
           screenshotUrl: review.image,
           author: review.owner?.userName || "Anonymous",
-        }))
-      : [];
+        })),
+        totalPages: 1,
+        currentPage: 0,
+        totalElements: list.length,
+        limit: limit
+      };
+    }
   } catch {
-    return [];
+    return {
+      items: [],
+      totalPages: 0,
+      currentPage: 0,
+      totalElements: 0,
+      limit: limit
+    };
   }
 }
 

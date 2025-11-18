@@ -16,12 +16,12 @@ import {
   getCurrentUser, 
   getPlayerByNick, 
   createOrGetPlayerByName,
-  getUserLinkedPlayer,
   linkUserToPlayer,
   fetchReviewsByUser,
   fetchReviewsOnLinkedPlayer
 } from "../services/api";
 import ReviewItem from "../components/ReviewItem";
+import Pagination from "../components/Pagination";
 
 // Function to generate gradient for avatar (same as in PlayerCard)
 const generateGradient = (str) => {
@@ -53,7 +53,12 @@ export default function UserProfile() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [userReviews, setUserReviews] = useState([]);
-  const [playerReviews, setPlayerReviews] = useState([]);
+  const [playerReviews, setPlayerReviews] = useState({ 
+    items: [], 
+    currentPage: 0, 
+    totalPages: 0, 
+    totalElements: 0 
+  });
 
   // Check if user is authenticated
   useEffect(() => {
@@ -97,8 +102,17 @@ export default function UserProfile() {
       const userReviewsData = await fetchReviewsByUser();
       setUserReviews(userReviewsData);
       
-      // Load reviews on player
-      const playerReviewsData = await fetchReviewsOnLinkedPlayer();
+      // Load reviews on player (first page)
+      const playerReviewsData = await fetchReviewsOnLinkedPlayer(0, 10);
+      setPlayerReviews(playerReviewsData);
+    } catch (err) {
+      console.error("Error loading reviews:", err);
+    }
+  };
+
+  const handlePlayerReviewsPageChange = async (newPage) => {
+    try {
+      const playerReviewsData = await fetchReviewsOnLinkedPlayer(newPage, 10);
       setPlayerReviews(playerReviewsData);
     } catch (err) {
       console.error("Error loading reviews:", err);
@@ -300,13 +314,25 @@ export default function UserProfile() {
             <Typography variant="h6" sx={{ mb: 2 }}>
               Reviews on Your Player Profile
             </Typography>
-            {playerReviews.length > 0 ? (
+            {playerReviews.items.length > 0 ? (
               <Box sx={{ mb: 3 }}>
-                {playerReviews.map((review) => (
+                {playerReviews.items.map((review) => (
                   <Box key={review.id} sx={{ mb: 2 }}>
                     <ReviewItem review={review} />
                   </Box>
                 ))}
+                
+                {playerReviews.totalElements > 0 && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 1 }}>
+                    Showing {playerReviews.items.length} of {playerReviews.totalElements} reviews
+                  </Typography>
+                )}
+                
+                <Pagination 
+                  currentPage={playerReviews.currentPage} 
+                  totalPages={playerReviews.totalPages} 
+                  onPageChange={handlePlayerReviewsPageChange} 
+                />
               </Box>
             ) : (
               <Typography variant="body2" color="text.secondary">
