@@ -138,7 +138,15 @@ export async function createOrGetPlayerByName(nickName) {
 export async function getPlayerByNick(nick) {
   try {
     const url = `${API_BASE}/api/players/nick/${encodeURIComponent(nick)}`;
-    return await apiHeaders(url);
+    const player = await apiHeaders(url);
+    // Process the player to extract avgGrade.parsedValue if it exists
+    if (player) {
+      return {
+        ...player,
+        avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade
+      };
+    }
+    return player;
   } catch (e) {
     if (String(e.message).startsWith("404")) {
       return null;
@@ -151,34 +159,46 @@ export async function getPlayerByNick(nick) {
 export async function searchPlayers(query, limit = 12) {
   if (!query) return listRecentPlayers(limit);
   const url = `${API_BASE}/api/players/search?nick=${encodeURIComponent(query)}&limit=${limit}`;
-  const list = await apiHeaders(url);
+  const response = await apiHeaders(url);
+  // Handle paginated response
+  const list = response && typeof response === 'object' && 'content' in response 
+    ? response.content 
+    : Array.isArray(response) ? response : [];
   // Process the list to extract avgGrade.parsedValue if it exists
-  return Array.isArray(list) ? list.map(player => ({
+  return list.map(player => ({
     ...player,
     avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade
-  })) : [];
+  }));
 }
 
 // GET /api/players - Получить всех игроков. Сортировка по "свежести" создания
 export async function listRecentPlayers(limit = 12) {
   const url = `${API_BASE}/api/players?limit=${limit}`;
-  const list = await apiHeaders(url);
+  const response = await apiHeaders(url);
+  // Handle paginated response
+  const list = response && typeof response === 'object' && 'content' in response 
+    ? response.content 
+    : Array.isArray(response) ? response : [];
   // Process the list to extract avgGrade.parsedValue if it exists
-  return Array.isArray(list) ? list.map(player => ({
+  return list.map(player => ({
     ...player,
     avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade
-  })) : [];
+  }));
 }
 
 export async function listAllPlayers() {
   // Fetch all players for leaderboard
   const url = `${API_BASE}/api/players`;
-  const list = await apiHeaders(url);
+  const response = await apiHeaders(url);
+  // Handle paginated response
+  const list = response && typeof response === 'object' && 'content' in response 
+    ? response.content 
+    : Array.isArray(response) ? response : [];
   // Process the list to extract avgGrade.parsedValue if it exists
-  return Array.isArray(list) ? list.map(player => ({
+  return list.map(player => ({
     ...player,
     avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade
-  })) : [];
+  }));
 }
 
 // PATCH /api/players/{nick} - Загрузить изображение для игрока (ignored as per request)
