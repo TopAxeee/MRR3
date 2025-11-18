@@ -21,6 +21,7 @@ import {
   fetchReviewsOnLinkedPlayer
 } from "../services/api";
 import ReviewItem from "../components/ReviewItem";
+import { getUserLinkedPlayer } from "../services/api";
 import Pagination from "../components/Pagination";
 
 // Function to generate gradient for avatar (same as in PlayerCard)
