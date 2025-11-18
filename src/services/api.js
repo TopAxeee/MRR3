@@ -70,11 +70,23 @@ export async function getUserLinkedPlayer() {
     if (!currentUser || !currentUser.telegramId) throw new Error("User not authenticated");
     
     const user = await apiHeaders(`${API_BASE}/api/users`);
-    if (user && user.playerDto) {
-      return user.playerDto;
+    // Log the user data for debugging
+    console.log("User data from API:", user);
+    
+    // Handle the case where user might have a player field instead of playerDto
+    if (user && (user.playerDto || user.player)) {
+      const player = user.playerDto || user.player;
+      // Process the player to extract avgGrade.parsedValue if it exists
+      const processedPlayer = {
+        ...player,
+        avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade
+      };
+      console.log("Processed player data:", processedPlayer);
+      return processedPlayer;
     }
     return null;
   } catch (e) {
+    console.error("Error fetching user linked player:", e);
     if (String(e.message).startsWith("404")) {
       return null;
     }

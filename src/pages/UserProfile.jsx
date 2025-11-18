@@ -80,7 +80,9 @@ export default function UserProfile() {
   const loadLinkedPlayer = async () => {
     try {
       setLoading(true);
+      console.log("Loading linked player...");
       const player = await getUserLinkedPlayer();
+      console.log("Linked player data:", player);
       setLinkedPlayer(player);
       
       // If player is linked, load reviews
