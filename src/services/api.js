@@ -152,21 +152,33 @@ export async function searchPlayers(query, limit = 12) {
   if (!query) return listRecentPlayers(limit);
   const url = `${API_BASE}/api/players/search?nick=${encodeURIComponent(query)}&limit=${limit}`;
   const list = await apiHeaders(url);
-  return Array.isArray(list) ? list : [];
+  // Process the list to extract avgGrade.parsedValue if it exists
+  return Array.isArray(list) ? list.map(player => ({
+    ...player,
+    avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade
+  })) : [];
 }
 
 // GET /api/players - Получить всех игроков. Сортировка по "свежести" создания
 export async function listRecentPlayers(limit = 12) {
   const url = `${API_BASE}/api/players?limit=${limit}`;
   const list = await apiHeaders(url);
-  return Array.isArray(list) ? list : [];
+  // Process the list to extract avgGrade.parsedValue if it exists
+  return Array.isArray(list) ? list.map(player => ({
+    ...player,
+    avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade
+  })) : [];
 }
 
 export async function listAllPlayers() {
   // Fetch all players for leaderboard
-  const url = `${API_BASE}/api/players?limit=1000`;
+  const url = `${API_BASE}/api/players`;
   const list = await apiHeaders(url);
-  return Array.isArray(list) ? list : [];
+  // Process the list to extract avgGrade.parsedValue if it exists
+  return Array.isArray(list) ? list.map(player => ({
+    ...player,
+    avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade
+  })) : [];
 }
 
 // PATCH /api/players/{nick} - Загрузить изображение для игрока (ignored as per request)
