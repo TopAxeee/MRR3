@@ -22,6 +22,46 @@ export function getUserId() {
   return user?.telegramId;
 }
 
+// Проверка, имеет ли пользователь доступ к админке (через API)
+export async function checkAdminAccess() {
+  try {
+    const userId = getUserId();
+    if (!userId) return false;
+    
+    // This would call an endpoint on your backend that checks if the user is an admin
+    // For example: GET /api/users/{userId}/admin-status
+    // Since this endpoint doesn't exist yet, we'll implement a client-side check
+    return isAdmin();
+  } catch (error) {
+    console.error("Error checking admin access:", error);
+    return false;
+  }
+}
+
+// Проверка, имеет ли пользователь доступ к админке (client-side)
+export function isAdmin() {
+  const user = getCurrentUser();
+  if (!user) return false;
+  
+  // Check if adminTelegramIds is defined in environment variables
+  // Format: comma-separated list of Telegram IDs
+  const adminIdsEnv = import.meta.env?.VITE_ADMIN_TELEGRAM_IDS;
+  let adminTelegramIds = [];
+  
+  if (adminIdsEnv) {
+    // Parse comma-separated list
+    adminTelegramIds = adminIdsEnv.split(',').map(id => id.trim());
+  } else {
+    // Fallback to hardcoded list (replace with your actual admin Telegram IDs)
+    adminTelegramIds = [
+      // Add actual admin Telegram IDs here
+      // Example: "123456789", "987654321"
+    ];
+  }
+  
+  return adminTelegramIds.includes(String(user.telegramId));
+}
+
 // Выход пользователя (убираем данные из локального хранилища)
 export function logout() {
   localStorage.removeItem("telegramUser");
@@ -395,26 +435,52 @@ export async function addReview(payload) {
 
 // DELETE /api/admin/players/{nick} - Удалить игрока
 export async function deletePlayerByNick(nick) {
-  return await apiHeaders(`${API_BASE}/api/admin/players/${encodeURIComponent(nick)}`, {
-    method: "DELETE",
-  });
+  try {
+    return await apiHeaders(`${API_BASE}/api/admin/players/${encodeURIComponent(nick)}`, {
+      method: "DELETE",
+    });
+  } catch (e) {
+    // Handle specific error cases
+    if (String(e.message).startsWith("404")) {
+      throw new Error("PLAYER_NOT_FOUND");
+    }
+    throw e;
+  }
+}
+
+// DELETE /api/admin/reviews/{id} - Удалить отзыв
+export async function deleteReviewById(id) {
+  try {
+    return await apiHeaders(`${API_BASE}/api/admin/reviews/${id}`, {
+      method: "DELETE",
+    });
+  } catch (e) {
+    // Handle specific error cases
+    if (String(e.message).startsWith("404")) {
+      throw new Error("REVIEW_NOT_FOUND");
+    }
+    throw e;
+  }
 }
 
 // PATCH /api/admin/players/{nick} - Обновить никнейм игрока, сохраня отзывы
 export async function updatePlayerNick(oldNick, newNick) {
   const body = JSON.stringify({ nickName: newNick });
-  return await apiHeaders(`${API_BASE}/api/admin/players/${encodeURIComponent(oldNick)}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body,
-  });
-}
-
-// DELETE /api/admin/reviews/{id} - Удалить отзыв
-export async function deleteReviewById(id) {
-  return await apiHeaders(`${API_BASE}/api/admin/reviews/${id}`, {
-    method: "DELETE",
-  });
+  try {
+    return await apiHeaders(`${API_BASE}/api/admin/players/${encodeURIComponent(oldNick)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body,
+    });
+  } catch (e) {
+    // Handle specific error cases
+    if (String(e.message).startsWith("404")) {
+      throw new Error("PLAYER_NOT_FOUND");
+    } else if (String(e.message).startsWith("409")) {
+      throw new Error("PLAYER_ALREADY_EXISTS");
+    }
+    throw e;
+  }
 }
 
 // GET /api/admin/reviews - Получить отзывы пользователя (по нику игрока и владельцу)

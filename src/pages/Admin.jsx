@@ -34,7 +34,9 @@ import {
   deletePlayerByNick,
   deleteReviewById,
   getAdminReviews,
-  updatePlayerNick
+  updatePlayerNick,
+  isAuthenticated,
+  checkAdminAccess
 } from "../services/api";
 
 export default function Admin() {
@@ -42,6 +44,8 @@ export default function Admin() {
   const [players, setPlayers] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [accessLoading, setAccessLoading] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -49,6 +53,34 @@ export default function Admin() {
   const [searchQuery, setSearchQuery] = useState('');
   const [editNickName, setEditNickName] = useState('');
   const navigate = useNavigate();
+
+  // Check if user has admin access
+  useEffect(() => {
+    const checkAccess = async () => {
+      setAccessLoading(true);
+      try {
+        // Redirect to home if user is not authenticated
+        if (!isAuthenticated()) {
+          navigate("/");
+          return;
+        }
+        
+        const access = await checkAdminAccess();
+        setHasAccess(access);
+        
+        if (!access) {
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Error checking admin access:", error);
+        navigate("/");
+      } finally {
+        setAccessLoading(false);
+      }
+    };
+    
+    checkAccess();
+  }, [navigate]);
 
   // Set document title when component mounts
   useEffect(() => {
@@ -70,6 +102,12 @@ export default function Admin() {
   // Function to handle save edit
   const handleEditSave = async () => {
     try {
+      // Validate input
+      if (!editNickName || editNickName.trim() === '') {
+        showSnackbar('Nickname cannot be empty', 'error');
+        return;
+      }
+      
       if (selectedItem && editNickName && editNickName !== selectedItem.nickName) {
         await updatePlayerNick(selectedItem.nickName, editNickName);
         showSnackbar(`Player nickname updated successfully`, 'success');
@@ -85,12 +123,25 @@ export default function Admin() {
       }
     } catch (error) {
       console.error('Error updating player:', error);
-      showSnackbar('Error updating player', 'error');
+      // Handle specific error cases
+      if (error.message === "PLAYER_NOT_FOUND") {
+        showSnackbar('Player not found. The player may have been deleted.', 'error');
+      } else if (error.message === "PLAYER_ALREADY_EXISTS") {
+        showSnackbar('A player with this nickname already exists. Please choose a different nickname.', 'error');
+      } else {
+        showSnackbar('Error updating player', 'error');
+      }
     }
   };
 
   // Load data based on active tab
   useEffect(() => {
+    // Double-check admin access
+    if (!isAuthenticated()) {
+      navigate("/");
+      return;
+    }
+    
     loadData();
   }, [tabValue]);
 
@@ -151,7 +202,14 @@ export default function Admin() {
       }
     } catch (error) {
       console.error('Error deleting item:', error);
-      showSnackbar('Error deleting item', 'error');
+      // Handle specific error cases
+      if (error.message === "PLAYER_NOT_FOUND") {
+        showSnackbar('Player not found. The player may have already been deleted.', 'error');
+      } else if (error.message === "REVIEW_NOT_FOUND") {
+        showSnackbar('Review not found. The review may have already been deleted.', 'error');
+      } else {
+        showSnackbar('Error deleting item', 'error');
+      }
     } finally {
       setOpenDeleteDialog(false);
       setSelectedItem(null);
@@ -177,6 +235,42 @@ export default function Admin() {
     review.playerNick.toLowerCase().includes(searchQuery.toLowerCase()) ||
     review.comment.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Show loading state while checking access
+  if (accessLoading) {
+    return (
+      <Box>
+        <Typography variant="h4" sx={{ mb: 3 }}>
+          Checking Access...
+        </Typography>
+        <Typography variant="body1">
+          Please wait while we verify your admin permissions.
+        </Typography>
+      </Box>
+    );
+  }
+
+  // Check if user has admin access, if not show access denied message
+  if (!hasAccess) {
+    return (
+      <Box>
+        <Typography variant="h4" sx={{ mb: 3 }}>
+          Access Denied
+        </Typography>
+        <Typography variant="body1">
+          You do not have permission to access the admin panel.
+        </Typography>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          onClick={() => navigate("/")}
+          sx={{ mt: 2 }}
+        >
+          Go to Home
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box>

@@ -5,7 +5,7 @@ import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
-import { isAuthenticated, getCurrentUser, logout } from "../services/api";
+import { isAuthenticated, getCurrentUser, logout, isAdmin } from "../services/api";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -142,19 +142,21 @@ export default function Header() {
           </Button>
         )}
         
-        <Button 
-          component={Link} 
-          to="/admin" 
-          color="inherit"
-          sx={{
-            fontWeight: 600,
-            "&:hover": {
-              backgroundColor: "rgba(255, 255, 255, 0.1)"
-            }
-          }}
-        >
-          Admin
-        </Button>
+        {user && isAdmin() && (
+          <Button 
+            component={Link} 
+            to="/admin" 
+            color="inherit"
+            sx={{
+              fontWeight: 600,
+              "&:hover": {
+                backgroundColor: "rgba(255, 255, 255, 0.1)"
+              }
+            }}
+          >
+            Admin
+          </Button>
+        )}
       </Toolbar>
     </AppBar>
   );
