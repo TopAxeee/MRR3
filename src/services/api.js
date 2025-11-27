@@ -433,53 +433,47 @@ export async function addReview(payload) {
 // ADMIN CONTROLLER
 // =============================================================================
 
-// DELETE /api/admin/players/{nick} - Удалить игрока
-export async function deletePlayerByNick(nick) {
+// GET /api/admin/reviews - Получить все отзывы
+export async function getAllReviews() {
   try {
-    return await apiHeaders(`${API_BASE}/api/admin/players/${encodeURIComponent(nick)}`, {
-      method: "DELETE",
-    });
-  } catch (e) {
-    // Handle specific error cases
-    if (String(e.message).startsWith("404")) {
-      throw new Error("PLAYER_NOT_FOUND");
-    }
-    throw e;
+    const url = `${API_BASE}/api/admin/reviews`;
+    const list = await apiHeaders(url);
+    return Array.isArray(list)
+      ? list.map((review) => ({
+          id: review.id,
+          comment: review.review,
+          createdAt: review.created,
+          grade: review.grade,
+          rank: review.rank,
+          screenshotUrl: review.image,
+          playerNick: review.player?.nickName || "Unknown Player",
+          author: review.owner?.userName || "Anonymous",
+        }))
+      : [];
+  } catch {
+    return [];
   }
 }
 
-// DELETE /api/admin/reviews/{id} - Удалить отзыв
-export async function deleteReviewById(id) {
+// GET /api/admin/reviews/user/{userId} - Получить отзывы пользователя (для админов)
+export async function fetchReviewsByUserId(userId) {
   try {
-    return await apiHeaders(`${API_BASE}/api/admin/reviews/${id}`, {
-      method: "DELETE",
-    });
-  } catch (e) {
-    // Handle specific error cases
-    if (String(e.message).startsWith("404")) {
-      throw new Error("REVIEW_NOT_FOUND");
-    }
-    throw e;
-  }
-}
-
-// PATCH /api/admin/players/{nick} - Обновить никнейм игрока, сохраня отзывы
-export async function updatePlayerNick(oldNick, newNick) {
-  const body = JSON.stringify({ nickName: newNick });
-  try {
-    return await apiHeaders(`${API_BASE}/api/admin/players/${encodeURIComponent(oldNick)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body,
-    });
-  } catch (e) {
-    // Handle specific error cases
-    if (String(e.message).startsWith("404")) {
-      throw new Error("PLAYER_NOT_FOUND");
-    } else if (String(e.message).startsWith("409")) {
-      throw new Error("PLAYER_ALREADY_EXISTS");
-    }
-    throw e;
+    const url = `${API_BASE}/api/admin/reviews/user/${userId}`;
+    const list = await apiHeaders(url);
+    return Array.isArray(list)
+      ? list.map((review) => ({
+          id: review.id,
+          comment: review.review,
+          createdAt: review.created,
+          grade: review.grade,
+          rank: review.rank,
+          screenshotUrl: review.image,
+          playerNick: review.player?.nickName || "Unknown Player",
+          author: review.owner?.userName || "Anonymous",
+        }))
+      : [];
+  } catch {
+    return [];
   }
 }
 
@@ -554,24 +548,52 @@ export async function getAdminReviews(playerNick, owner, page = 0, limit = 20) {
   }
 }
 
-// GET /api/admin/reviews - Получить все отзывы
-export async function getAllReviews() {
+// DELETE /api/admin/players/{nick} - Удалить игрока
+export async function deletePlayerByNick(nick) {
   try {
-    const url = `${API_BASE}/api/admin/reviews`;
-    const list = await apiHeaders(url);
-    return Array.isArray(list)
-      ? list.map((review) => ({
-          id: review.id,
-          comment: review.review,
-          createdAt: review.created,
-          grade: review.grade,
-          rank: review.rank,
-          screenshotUrl: review.image,
-          playerNick: review.player?.nickName || "Unknown Player",
-          author: review.owner?.userName || "Anonymous",
-        }))
-      : [];
-  } catch {
-    return [];
+    return await apiHeaders(`${API_BASE}/api/admin/players/${encodeURIComponent(nick)}`, {
+      method: "DELETE",
+    });
+  } catch (e) {
+    // Handle specific error cases
+    if (String(e.message).startsWith("404")) {
+      throw new Error("PLAYER_NOT_FOUND");
+    }
+    throw e;
+  }
+}
+
+// DELETE /api/admin/reviews/{id} - Удалить отзыв
+export async function deleteReviewById(id) {
+  try {
+    return await apiHeaders(`${API_BASE}/api/admin/reviews/${id}`, {
+      method: "DELETE",
+    });
+  } catch (e) {
+    // Handle specific error cases
+    if (String(e.message).startsWith("404")) {
+      throw new Error("REVIEW_NOT_FOUND");
+    }
+    throw e;
+  }
+}
+
+// PATCH /api/admin/players/{nick} - Обновить никнейм игрока, сохраня отзывы
+export async function updatePlayerNick(oldNick, newNick) {
+  const body = JSON.stringify({ nickName: newNick });
+  try {
+    return await apiHeaders(`${API_BASE}/api/admin/players/${encodeURIComponent(oldNick)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body,
+    });
+  } catch (e) {
+    // Handle specific error cases
+    if (String(e.message).startsWith("404")) {
+      throw new Error("PLAYER_NOT_FOUND");
+    } else if (String(e.message).startsWith("409")) {
+      throw new Error("PLAYER_ALREADY_EXISTS");
+    }
+    throw e;
   }
 }

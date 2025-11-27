@@ -197,7 +197,7 @@ export default function Admin() {
   const handleReviewsPageChange = async (event, page) => {
     setLoading(true);
     try {
-      const reviewsData = await getAdminReviews(searchQuery, '', page - 1, 20);
+      const reviewsData = await getAdminReviews(playerNickSearch, ownerNameSearch, page - 1, 20);
       setReviews(reviewsData.items);
       setReviewsPagination({
         currentPage: reviewsData.currentPage,
