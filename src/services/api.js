@@ -388,3 +388,90 @@ export async function addReview(payload) {
 
 // PATCH /api/reviews/{id} - Загрузить изображение для отзыва (ignored as per request)
 // Not implemented
+
+// =============================================================================
+// ADMIN CONTROLLER
+// =============================================================================
+
+// DELETE /api/admin/players/{nick} - Удалить игрока
+export async function deletePlayerByNick(nick) {
+  return await apiHeaders(`${API_BASE}/api/admin/players/${encodeURIComponent(nick)}`, {
+    method: "DELETE",
+  });
+}
+
+// PATCH /api/admin/players/{nick} - Обновить никнейм игрока, сохраня отзывы
+export async function updatePlayerNick(oldNick, newNick) {
+  const body = JSON.stringify({ nickName: newNick });
+  return await apiHeaders(`${API_BASE}/api/admin/players/${encodeURIComponent(oldNick)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body,
+  });
+}
+
+// DELETE /api/admin/reviews/{id} - Удалить отзыв
+export async function deleteReviewById(id) {
+  return await apiHeaders(`${API_BASE}/api/admin/reviews/${id}`, {
+    method: "DELETE",
+  });
+}
+
+// GET /api/admin/reviews - Получить отзывы пользователя (по нику игрока и владельцу)
+export async function getAdminReviews(playerNick, owner) {
+  try {
+    let url = `${API_BASE}/api/admin/reviews`;
+    const params = new URLSearchParams();
+    
+    if (playerNick) {
+      params.append('nick', playerNick);
+    }
+    
+    if (owner) {
+      params.append('owner', owner);
+    }
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    
+    const list = await apiHeaders(url);
+    return Array.isArray(list)
+      ? list.map((review) => ({
+          id: review.id,
+          comment: review.review,
+          createdAt: review.created,
+          grade: review.grade,
+          rank: review.rank,
+          screenshotUrl: review.image,
+          playerNick: review.player?.nickName || "Unknown Player",
+          author: review.owner?.userName || "Anonymous",
+        }))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+// =============================================================================
+// GET /api/admin/reviews - Получить все отзывы
+export async function getAllReviews() {
+  try {
+    const url = `${API_BASE}/api/admin/reviews`;
+    const list = await apiHeaders(url);
+    return Array.isArray(list)
+      ? list.map((review) => ({
+          id: review.id,
+          comment: review.review,
+          createdAt: review.created,
+          grade: review.grade,
+          rank: review.rank,
+          screenshotUrl: review.image,
+          playerNick: review.player?.nickName || "Unknown Player",
+          author: review.owner?.userName || "Anonymous",
+        }))
+      : [];
+  } catch {
+    return [];
+  }
+}

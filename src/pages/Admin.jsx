@@ -24,10 +24,17 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import OutlinedInput from "@mui/material/OutlinedInput";
 
 import { 
   listRecentPlayers, 
-  fetchReviewsByPlayer
+  fetchReviewsByPlayer,
+  deletePlayerByNick,
+  deleteReviewById,
+  getAdminReviews,
+  updatePlayerNick
 } from "../services/api";
 
 export default function Admin() {
@@ -36,9 +43,11 @@ export default function Admin() {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [searchQuery, setSearchQuery] = useState('');
+  const [editNickName, setEditNickName] = useState('');
   const navigate = useNavigate();
 
   // Set document title when component mounts
@@ -53,8 +62,31 @@ export default function Admin() {
 
   // Function to handle edit action
   const handleEditPlayer = (player) => {
-    // Navigate to player profile for editing
-    navigate(`/player/${player.nickName}`);
+    setSelectedItem(player);
+    setEditNickName(player.nickName);
+    setOpenEditDialog(true);
+  };
+
+  // Function to handle save edit
+  const handleEditSave = async () => {
+    try {
+      if (selectedItem && editNickName && editNickName !== selectedItem.nickName) {
+        await updatePlayerNick(selectedItem.nickName, editNickName);
+        showSnackbar(`Player nickname updated successfully`, 'success');
+        setOpenEditDialog(false);
+        setSelectedItem(null);
+        setEditNickName('');
+        // Reload data
+        loadData();
+      } else {
+        setOpenEditDialog(false);
+        setSelectedItem(null);
+        setEditNickName('');
+      }
+    } catch (error) {
+      console.error('Error updating player:', error);
+      showSnackbar('Error updating player', 'error');
+    }
   };
 
   // Load data based on active tab
@@ -71,16 +103,8 @@ export default function Admin() {
           setPlayers(playerData);
           break;
         case 1: // Reviews
-          // For simplicity, we'll load reviews for all players
-          // In a real app, you might want a dedicated API endpoint for this
-          const allPlayers = await listRecentPlayers(100);
-          const allReviews = [];
-          for (const player of allPlayers) {
-            const playerReviews = await fetchReviewsByPlayer(player.nickName);
-            playerReviews.forEach(review => {
-              allReviews.push({ ...review, playerNick: player.nickName });
-            });
-          }
+          // Use the admin endpoint to get reviews with optional filters
+          const allReviews = await getAdminReviews(searchQuery, '');
           setReviews(allReviews);
           break;
         default:
@@ -111,16 +135,38 @@ export default function Admin() {
   };
 
   const handleDeleteConfirm = async () => {
-    // In a real application, you would implement actual delete functionality
-    // For now, we'll just show a message
-    showSnackbar('Delete functionality would be implemented in a real application', 'info');
-    setOpenDeleteDialog(false);
-    setSelectedItem(null);
+    try {
+      if (selectedItem && selectedItem.nickName) {
+        // Delete player
+        await deletePlayerByNick(selectedItem.nickName);
+        showSnackbar(`Player ${selectedItem.nickName} deleted successfully`, 'success');
+        // Reload data
+        loadData();
+      } else if (selectedItem && selectedItem.id) {
+        // Delete review
+        await deleteReviewById(selectedItem.id);
+        showSnackbar(`Review deleted successfully`, 'success');
+        // Reload data
+        loadData();
+      }
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      showSnackbar('Error deleting item', 'error');
+    } finally {
+      setOpenDeleteDialog(false);
+      setSelectedItem(null);
+    }
   };
 
   const handleDeleteCancel = () => {
     setOpenDeleteDialog(false);
     setSelectedItem(null);
+  };
+
+  const handleEditCancel = () => {
+    setOpenEditDialog(false);
+    setSelectedItem(null);
+    setEditNickName('');
   };
 
   const filteredPlayers = players.filter(player => 
@@ -226,6 +272,7 @@ export default function Admin() {
                     <TableCell>Player</TableCell>
                     <TableCell>Comment</TableCell>
                     <TableCell>Grade</TableCell>
+                    <TableCell>Author</TableCell>
                     <TableCell>Actions</TableCell>
                   </TableRow>
                 </TableHead>
@@ -235,6 +282,7 @@ export default function Admin() {
                       <TableCell>{review.playerNick}</TableCell>
                       <TableCell>{review.comment}</TableCell>
                       <TableCell>{review.grade}/5</TableCell>
+                      <TableCell>{review.author}</TableCell>
                       <TableCell>
                         <IconButton 
                           onClick={() => handleDeleteClick(review)}
@@ -253,6 +301,7 @@ export default function Admin() {
         </>
       )}
       
+      {/* Delete Confirmation Dialog */}
       <Dialog
         open={openDeleteDialog}
         onClose={handleDeleteCancel}
@@ -271,6 +320,34 @@ export default function Admin() {
           <Button onClick={handleDeleteCancel}>Cancel</Button>
           <Button onClick={handleDeleteConfirm} color="error" autoFocus>
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Edit Player Dialog */}
+      <Dialog
+        open={openEditDialog}
+        onClose={handleEditCancel}
+        aria-labelledby="edit-dialog-title"
+      >
+        <DialogTitle id="edit-dialog-title">
+          Edit Player
+        </DialogTitle>
+        <DialogContent>
+          <FormControl fullWidth sx={{ mt: 2 }}>
+            <InputLabel htmlFor="player-nickname">Nickname</InputLabel>
+            <OutlinedInput
+              id="player-nickname"
+              value={editNickName}
+              onChange={(e) => setEditNickName(e.target.value)}
+              label="Nickname"
+            />
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleEditCancel}>Cancel</Button>
+          <Button onClick={handleEditSave} color="primary" autoFocus>
+            Save
           </Button>
         </DialogActions>
       </Dialog>
