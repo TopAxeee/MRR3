@@ -483,27 +483,49 @@ export async function updatePlayerNick(oldNick, newNick) {
   }
 }
 
-// GET /api/admin/reviews - Получить отзывы пользователя (по нику игрока и владельцу)
-export async function getAdminReviews(playerNick, owner) {
+// GET /api/admin/reviews - Получить отзывы с пагинацией, поиск по нику игрока и автора
+export async function getAdminReviews(playerNick, owner, page = 0, limit = 20) {
   try {
-    let url = `${API_BASE}/api/admin/reviews`;
-    const params = new URLSearchParams();
+    let url = `${API_BASE}/api/admin/reviews?page=${page}&limit=${limit}`;
     
+    // Add query parameters if provided
     if (playerNick) {
-      params.append('nick', playerNick);
+      url += `&nick=${encodeURIComponent(playerNick)}`;
     }
     
     if (owner) {
-      params.append('owner', owner);
+      url += `&owner=${encodeURIComponent(owner)}`;
     }
     
-    if (params.toString()) {
-      url += `?${params.toString()}`;
-    }
+    const response = await apiHeaders(url);
     
-    const list = await apiHeaders(url);
-    return Array.isArray(list)
-      ? list.map((review) => ({
+    // Handle paginated response
+    if (response && typeof response === 'object' && 'content' in response) {
+      // Backend pagination response format
+      return {
+        items: Array.isArray(response.content) 
+          ? response.content.map((review) => ({
+              id: review.id,
+              comment: review.review,
+              createdAt: review.created,
+              grade: review.grade,
+              rank: review.rank,
+              screenshotUrl: review.image,
+              playerNick: review.player?.nickName || "Unknown Player",
+              author: review.owner?.userName || "Anonymous",
+              owner: review.owner // Include full owner object for admin actions
+            }))
+          : [],
+        totalPages: response.totalPages || 0,
+        currentPage: response.page || page,
+        totalElements: response.totalElements || 0,
+        limit: response.size || limit
+      };
+    } else {
+      // Fallback to previous behavior for non-paginated response
+      const list = Array.isArray(response) ? response : [];
+      return {
+        items: list.map((review) => ({
           id: review.id,
           comment: review.review,
           createdAt: review.created,
@@ -512,14 +534,26 @@ export async function getAdminReviews(playerNick, owner) {
           screenshotUrl: review.image,
           playerNick: review.player?.nickName || "Unknown Player",
           author: review.owner?.userName || "Anonymous",
-        }))
-      : [];
-  } catch {
-    return [];
+          owner: review.owner // Include full owner object for admin actions
+        })),
+        totalPages: 1,
+        currentPage: 0,
+        totalElements: list.length,
+        limit: limit
+      };
+    }
+  } catch (error) {
+    console.error('Error fetching admin reviews:', error);
+    return {
+      items: [],
+      totalPages: 0,
+      currentPage: 0,
+      totalElements: 0,
+      limit: limit
+    };
   }
 }
 
-// =============================================================================
 // GET /api/admin/reviews - Получить все отзывы
 export async function getAllReviews() {
   try {

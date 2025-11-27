@@ -27,6 +27,10 @@ import Alert from "@mui/material/Alert";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import OutlinedInput from "@mui/material/OutlinedInput";
+import CircularProgress from "@mui/material/CircularProgress";
+import Chip from "@mui/material/Chip";
+import Pagination from "@mui/material/Pagination";
+import PaginationItem from "@mui/material/PaginationItem";
 
 import { 
   listRecentPlayers, 
@@ -36,7 +40,8 @@ import {
   getAdminReviews,
   updatePlayerNick,
   isAuthenticated,
-  checkAdminAccess
+  checkAdminAccess,
+  fetchReviewsByUserId
 } from "../services/api";
 
 export default function Admin() {
@@ -51,7 +56,18 @@ export default function Admin() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [searchQuery, setSearchQuery] = useState('');
+  const [playerNickSearch, setPlayerNickSearch] = useState(''); // For reviews search
+  const [ownerNameSearch, setOwnerNameSearch] = useState(''); // For reviews search
   const [editNickName, setEditNickName] = useState('');
+  const [detailView, setDetailView] = useState(null); // For player/user detail view
+  const [detailReviews, setDetailReviews] = useState([]);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [reviewsPagination, setReviewsPagination] = useState({
+    currentPage: 0,
+    totalPages: 0,
+    totalElements: 0,
+    limit: 20
+  });
   const navigate = useNavigate();
 
   // Check if user has admin access
@@ -142,8 +158,11 @@ export default function Admin() {
       return;
     }
     
-    loadData();
-  }, [tabValue]);
+    // If we're not in detail view, load main data
+    if (!detailView) {
+      loadData();
+    }
+  }, [tabValue, detailView]);
 
   const loadData = async () => {
     setLoading(true);
@@ -154,9 +173,15 @@ export default function Admin() {
           setPlayers(playerData);
           break;
         case 1: // Reviews
-          // Use the admin endpoint to get reviews with optional filters
-          const allReviews = await getAdminReviews(searchQuery, '');
-          setReviews(allReviews);
+          // Use the admin endpoint to get reviews with pagination
+          const reviewsData = await getAdminReviews(playerNickSearch, ownerNameSearch, 0, 20);
+          setReviews(reviewsData.items);
+          setReviewsPagination({
+            currentPage: reviewsData.currentPage,
+            totalPages: reviewsData.totalPages,
+            totalElements: reviewsData.totalElements,
+            limit: reviewsData.limit
+          });
           break;
         default:
           break;
@@ -168,8 +193,113 @@ export default function Admin() {
     }
   };
 
+  // Function to handle reviews pagination
+  const handleReviewsPageChange = async (event, page) => {
+    setLoading(true);
+    try {
+      const reviewsData = await getAdminReviews(searchQuery, '', page - 1, 20);
+      setReviews(reviewsData.items);
+      setReviewsPagination({
+        currentPage: reviewsData.currentPage,
+        totalPages: reviewsData.totalPages,
+        totalElements: reviewsData.totalElements,
+        limit: reviewsData.limit
+      });
+    } catch (error) {
+      showSnackbar('Error loading reviews', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to handle search
+  const handleSearch = async () => {
+    if (tabValue === 1) {
+      setLoading(true);
+      try {
+        const reviewsData = await getAdminReviews(playerNickSearch, ownerNameSearch, 0, 20);
+        setReviews(reviewsData.items);
+        setReviewsPagination({
+          currentPage: reviewsData.currentPage,
+          totalPages: reviewsData.totalPages,
+          totalElements: reviewsData.totalElements,
+          limit: reviewsData.limit
+        });
+      } catch (error) {
+        showSnackbar('Error searching reviews', 'error');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // For players tab, the filtering is done client-side
+      // The useEffect will automatically filter the players
+    }
+  };
+
+  // Function to reset search
+  const handleResetSearch = () => {
+    if (tabValue === 0) {
+      setSearchQuery('');
+    } else {
+      setPlayerNickSearch('');
+      setOwnerNameSearch('');
+      // Reload all reviews
+      loadData();
+    }
+  };
+
+  // Function to view reviews for a specific player
+  const handleViewPlayerReviews = async (player) => {
+    setDetailLoading(true);
+    setDetailView({ type: 'player', data: player });
+    try {
+      const playerReviews = await fetchReviewsByPlayer(player.nickName);
+      setDetailReviews(playerReviews.items || playerReviews);
+    } catch (error) {
+      console.error('Error fetching player reviews:', error);
+      showSnackbar('Error loading player reviews', 'error');
+      setDetailReviews([]);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  // Function to view reviews by a specific user
+  const handleViewUserReviews = async (review) => {
+    if (!review.owner?.id) {
+      showSnackbar('User information not available', 'error');
+      return;
+    }
+    
+    setDetailLoading(true);
+    setDetailView({ type: 'user', data: review.owner, playerName: review.playerNick });
+    try {
+      const userReviews = await fetchReviewsByUserId(review.owner.id);
+      setDetailReviews(userReviews);
+    } catch (error) {
+      console.error('Error fetching user reviews:', error);
+      showSnackbar('Error loading user reviews', 'error');
+      setDetailReviews([]);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  // Function to go back to main view
+  const handleBackToMain = () => {
+    setDetailView(null);
+    setDetailReviews([]);
+  };
+
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
+    // Reset detail view when changing tabs
+    setDetailView(null);
+    setDetailReviews([]);
+    // Reset search fields when changing tabs
+    setSearchQuery('');
+    setPlayerNickSearch('');
+    setOwnerNameSearch('');
   };
 
   const showSnackbar = (message, severity = 'success') => {
@@ -213,6 +343,14 @@ export default function Admin() {
     } finally {
       setOpenDeleteDialog(false);
       setSelectedItem(null);
+      // If we're in detail view, reload the detail reviews
+      if (detailView) {
+        if (detailView.type === 'player') {
+          handleViewPlayerReviews(detailView.data);
+        } else if (detailView.type === 'user') {
+          handleViewUserReviews({ owner: detailView.data, playerNick: detailView.playerName });
+        }
+      }
     }
   };
 
@@ -229,11 +367,6 @@ export default function Admin() {
 
   const filteredPlayers = players.filter(player => 
     player.nickName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredReviews = reviews.filter(review => 
-    review.playerNick.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    review.comment.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Show loading state while checking access
@@ -272,6 +405,134 @@ export default function Admin() {
     );
   }
 
+  // If we're in detail view, show the detail component
+  if (detailView) {
+    return (
+      <Box>
+        <Button 
+          onClick={handleBackToMain}
+          variant="outlined"
+          sx={{ mb: 2 }}
+        >
+          ← Back to Admin Panel
+        </Button>
+        
+        <Typography variant="h4" sx={{ mb: 3 }}>
+          {detailView.type === 'player' ? `Reviews for Player: ${detailView.data.nickName}` : `Reviews by User: ${detailView.data.userName || detailView.data.firstName || 'Unknown User'}`}
+        </Typography>
+        
+        {detailLoading ? (
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+            <CircularProgress />
+          </Box>
+        ) : (
+          <>
+            <Paper sx={{ mb: 3, p: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Review Details
+              </Typography>
+              <Typography>
+                Total Reviews: {detailReviews.length}
+              </Typography>
+            </Paper>
+            
+            {detailReviews.length > 0 ? (
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>{detailView.type === 'player' ? 'Reviewer' : 'Player'}</TableCell>
+                      <TableCell>Comment</TableCell>
+                      <TableCell>Grade</TableCell>
+                      <TableCell>Rank</TableCell>
+                      <TableCell>Date</TableCell>
+                      <TableCell>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {detailReviews.map((review) => (
+                      <TableRow key={review.id}>
+                        <TableCell>
+                          {detailView.type === 'player' ? 
+                            (review.author || 'Anonymous') : 
+                            (review.playerNick || 'Unknown Player')
+                          }
+                        </TableCell>
+                        <TableCell>{review.comment}</TableCell>
+                        <TableCell>
+                          <Chip 
+                            label={`${review.grade}/5`} 
+                            color={review.grade >= 4 ? "success" : review.grade >= 3 ? "warning" : "error"}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>{review.rank || 'N/A'}</TableCell>
+                        <TableCell>
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <IconButton 
+                            onClick={() => handleDeleteClick(review)}
+                            color="error"
+                            size="small"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            ) : (
+              <Paper sx={{ p: 3, textAlign: 'center' }}>
+                <Typography>No reviews found.</Typography>
+              </Paper>
+            )}
+          </>
+        )}
+        
+        {/* Delete Confirmation Dialog */}
+        <Dialog
+          open={openDeleteDialog}
+          onClose={handleDeleteCancel}
+          aria-labelledby="delete-dialog-title"
+          aria-describedby="delete-dialog-description"
+        >
+          <DialogTitle id="delete-dialog-title">
+            Confirm Delete
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText id="delete-dialog-description">
+              Are you sure you want to delete this review? This action cannot be undone.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleDeleteCancel}>Cancel</Button>
+            <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+        
+        <Snackbar 
+          open={snackbar.open} 
+          autoHideDuration={6000} 
+          onClose={handleSnackbarClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert 
+            onClose={handleSnackbarClose} 
+            severity={snackbar.severity}
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </Box>
+    );
+  }
+
   return (
     <Box>
       <Typography variant="h4" sx={{ mb: 3 }}>
@@ -279,12 +540,45 @@ export default function Admin() {
       </Typography>
       
       <Paper sx={{ mb: 3, p: 2 }}>
-        <TextField
-          fullWidth
-          label="Search players or reviews"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+        {tabValue === 0 ? (
+          <TextField
+            fullWidth
+            label="Search players by nickname"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          />
+        ) : (
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            <TextField
+              label="Player Nickname"
+              value={playerNickSearch}
+              onChange={(e) => setPlayerNickSearch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            />
+            <TextField
+              label="Owner Name"
+              value={ownerNameSearch}
+              onChange={(e) => setOwnerNameSearch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            />
+          </Box>
+        )}
+        <Box sx={{ mt: 1 }}>
+          <Button 
+            variant="contained" 
+            onClick={handleSearch}
+            sx={{ mr: 1 }}
+          >
+            Search
+          </Button>
+          <Button 
+            variant="outlined" 
+            onClick={handleResetSearch}
+          >
+            Reset
+          </Button>
+        </Box>
       </Paper>
       
       <Paper sx={{ width: '100%', mb: 2 }}>
@@ -295,7 +589,9 @@ export default function Admin() {
       </Paper>
       
       {loading ? (
-        <Typography>Loading...</Typography>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+          <CircularProgress />
+        </Box>
       ) : (
         <>
           {tabValue === 0 && (
@@ -330,6 +626,16 @@ export default function Admin() {
                       </TableCell>
                       <TableCell>{player.reviewsCount || 0}</TableCell>
                       <TableCell>
+                        <Button 
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewPlayerReviews(player);
+                          }}
+                          sx={{ mr: 1 }}
+                        >
+                          View Reviews
+                        </Button>
                         <IconButton 
                           onClick={(e) => {
                             e.stopPropagation();
@@ -359,38 +665,78 @@ export default function Admin() {
           )}
           
           {tabValue === 1 && (
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Player</TableCell>
-                    <TableCell>Comment</TableCell>
-                    <TableCell>Grade</TableCell>
-                    <TableCell>Author</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredReviews.map((review) => (
-                    <TableRow key={review.id}>
-                      <TableCell>{review.playerNick}</TableCell>
-                      <TableCell>{review.comment}</TableCell>
-                      <TableCell>{review.grade}/5</TableCell>
-                      <TableCell>{review.author}</TableCell>
-                      <TableCell>
-                        <IconButton 
-                          onClick={() => handleDeleteClick(review)}
-                          color="error"
-                          size="small"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
+            <>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Player</TableCell>
+                      <TableCell>Comment</TableCell>
+                      <TableCell>Grade</TableCell>
+                      <TableCell>Author</TableCell>
+                      <TableCell>Date</TableCell>
+                      <TableCell>Actions</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {reviews.map((review) => (
+                      <TableRow key={review.id}>
+                        <TableCell>{review.playerNick}</TableCell>
+                        <TableCell>{review.comment}</TableCell>
+                        <TableCell>
+                          <Chip 
+                            label={`${review.grade}/5`} 
+                            color={review.grade >= 4 ? "success" : review.grade >= 3 ? "warning" : "error"}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button 
+                            size="small"
+                            onClick={() => handleViewUserReviews(review)}
+                          >
+                            {review.author}
+                          </Button>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <IconButton 
+                            onClick={() => handleDeleteClick(review)}
+                            color="error"
+                            size="small"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              
+              {reviewsPagination.totalPages > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                  <Pagination
+                    count={reviewsPagination.totalPages}
+                    page={reviewsPagination.currentPage + 1}
+                    onChange={handleReviewsPageChange}
+                    renderItem={(item) => (
+                      <PaginationItem
+                        {...item}
+                      />
+                    )}
+                  />
+                </Box>
+              )}
+              
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+                <Typography variant="body2">
+                  Showing {reviews.length} of {reviewsPagination.totalElements} reviews
+                </Typography>
+              </Box>
+            </>
           )}
         </>
       )}
