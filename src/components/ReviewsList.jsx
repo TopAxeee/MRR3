@@ -1,5 +1,5 @@
 // src/components/ReviewsList.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 
@@ -14,22 +14,35 @@ export default function ReviewsList({ playerNick, refreshKey }) {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
 
+  const loadReviews = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await fetchReviewsByPlayer(playerNick, 30, currentPage, 10);
+      setItems(data.items);
+      setTotalPages(data.totalPages);
+      setTotalElements(data.totalElements);
+    } catch (error) {
+      console.error("Error loading reviews:", error);
+      setItems([]);
+      setTotalPages(0);
+      setTotalElements(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [playerNick, currentPage]);
+
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     (async () => {
-      const data = await fetchReviewsByPlayer(playerNick, 30, currentPage, 10);
-      if (!cancelled) {
-        setItems(data.items);
-        setTotalPages(data.totalPages);
-        setTotalElements(data.totalElements);
+      await loadReviews();
+      if (cancelled) {
         setLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [playerNick, currentPage, refreshKey]);
+  }, [playerNick, currentPage, refreshKey, loadReviews]);
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);

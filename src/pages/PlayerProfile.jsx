@@ -63,21 +63,31 @@ export default function PlayerProfile() {
         if (cancelled) return;
         setPlayer(p);
         
-        // Check if this is the current user's linked player
-        if (p && isAuthenticated()) {
-          try {
-            const linkedPlayer = await getUserLinkedPlayer();
-            setIsLinkedPlayer(linkedPlayer && linkedPlayer.id === p.id);
-          } catch (err) {
-            console.error("Error checking if player is linked:", err);
-          }
-        }
-        
         // Update document title when player data is loaded
         if (p && p.nickName) {
           document.title = `${p.nickName} MRR`;
         } else {
           document.title = `${nick} MRR`;
+        }
+        
+        // Only check if this is the current user's linked player if we have a player and user is authenticated
+        if (p && isAuthenticated()) {
+          try {
+            const linkedPlayer = await getUserLinkedPlayer();
+            if (!cancelled) {
+              setIsLinkedPlayer(linkedPlayer && linkedPlayer.id === p.id);
+            }
+          } catch (err) {
+            console.error("Error checking if player is linked:", err);
+            if (!cancelled) {
+              setIsLinkedPlayer(false);
+            }
+          }
+        } else {
+          // If no player or user not authenticated, player can't be linked
+          if (!cancelled) {
+            setIsLinkedPlayer(false);
+          }
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -101,21 +111,26 @@ export default function PlayerProfile() {
       const p = await getPlayerByNick(nick);
       setPlayer(p);
       
-      // Check if this is the current user's linked player
+      // Update document title when player data is loaded
+      if (p && p.nickName) {
+        document.title = `${p.nickName} MRR`;
+      } else {
+        document.title = `${nick} MRR`;
+      }
+      
+      // Only check if this is the current user's linked player if we have a player and user is authenticated
       if (p && isAuthenticated()) {
         try {
           const linkedPlayer = await getUserLinkedPlayer();
           setIsLinkedPlayer(linkedPlayer && linkedPlayer.id === p.id);
         } catch (err) {
           console.error("Error checking if player is linked:", err);
+          // If there's an error, assume the player is not linked
+          setIsLinkedPlayer(false);
         }
-      }
-      
-      // Update document title when player data is loaded
-      if (p && p.nickName) {
-        document.title = `${p.nickName} MRR`;
       } else {
-        document.title = `${nick} MRR`;
+        // If no player or user not authenticated, player can't be linked
+        setIsLinkedPlayer(false);
       }
     } catch (error) {
       console.error("Error loading player data:", error);

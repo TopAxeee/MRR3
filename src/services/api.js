@@ -101,14 +101,30 @@ async function apiHeaders(url, opts = {}) {
 // USER CONTROLLER
 // =============================================================================
 
+// Simple cache for user linked player data
+const userPlayerCache = new Map();
+const USER_PLAYER_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 // GET /api/users - Получить пользователя по TelegramId
 export async function getUserLinkedPlayer() {
+  const currentUser = getCurrentUser();
+  if (!currentUser || !currentUser.telegramId) throw new Error("User not authenticated");
+  
+  const cacheKey = currentUser.telegramId;
+  
+  // Check if we have valid cached data
+  if (userPlayerCache.has(cacheKey)) {
+    const cached = userPlayerCache.get(cacheKey);
+    if (Date.now() - cached.timestamp < USER_PLAYER_CACHE_DURATION) {
+      return cached.data;
+    } else {
+      // Remove expired cache entry
+      userPlayerCache.delete(cacheKey);
+    }
+  }
+  
   try {
     // First get user data to find linked player
-
-    const currentUser = getCurrentUser();
-    if (!currentUser || !currentUser.telegramId) throw new Error("User not authenticated");
-    
     const user = await apiHeaders(`${API_BASE}/api/users`);
     // Log the user data for debugging
     console.log("User data from API:", user);
@@ -122,6 +138,13 @@ export async function getUserLinkedPlayer() {
         avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade
       };
       console.log("Processed player data:", processedPlayer);
+      
+      // Cache the processed player data
+      userPlayerCache.set(cacheKey, {
+        data: processedPlayer,
+        timestamp: Date.now()
+      });
+      
       return processedPlayer;
     }
     return null;
@@ -168,6 +191,10 @@ export async function canUserReviewPlayer(playerId) {
 // PLAYER CONTROLLER
 // =============================================================================
 
+// Simple cache for player data to avoid duplicate requests
+const playerCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 // POST /api/players - Создать нового игрока
 export async function createOrGetPlayerByName(nickName) {
   const body = JSON.stringify({ nickName });
@@ -188,15 +215,36 @@ export async function createOrGetPlayerByName(nickName) {
 
 // GET /api/players/nick/{nick} - Получить игрока
 export async function getPlayerByNick(nick) {
+  const cacheKey = nick.toLowerCase();
+  
+  // Check if we have valid cached data
+  if (playerCache.has(cacheKey)) {
+    const cached = playerCache.get(cacheKey);
+    if (Date.now() - cached.timestamp < CACHE_DURATION) {
+      return cached.data;
+    } else {
+      // Remove expired cache entry
+      playerCache.delete(cacheKey);
+    }
+  }
+  
   try {
     const url = `${API_BASE}/api/players/nick/${encodeURIComponent(nick)}`;
     const player = await apiHeaders(url);
     // Process the player to extract avgGrade.parsedValue if it exists
     if (player) {
-      return {
+      const processedPlayer = {
         ...player,
         avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade
       };
+      
+      // Cache the processed player data
+      playerCache.set(cacheKey, {
+        data: processedPlayer,
+        timestamp: Date.now()
+      });
+      
+      return processedPlayer;
     }
     return player;
   } catch (e) {
@@ -260,9 +308,26 @@ export async function listAllPlayers() {
 // REVIEW CONTROLLER
 // =============================================================================
 
+// Simple cache for reviews data
+const reviewsCache = new Map();
+const REVIEWS_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+
 // GET /api/reviews/nick/{nick} - Получить отзывы игрока
 // Updated to support pagination
 export async function fetchReviewsByPlayer(playerNick, days = 30, page = 0, limit = 10) {
+  const cacheKey = `${playerNick.toLowerCase()}_${days}_${page}_${limit}`;
+  
+  // Check if we have valid cached data
+  if (reviewsCache.has(cacheKey)) {
+    const cached = reviewsCache.get(cacheKey);
+    if (Date.now() - cached.timestamp < REVIEWS_CACHE_DURATION) {
+      return cached.data;
+    } else {
+      // Remove expired cache entry
+      reviewsCache.delete(cacheKey);
+    }
+  }
+  
   try {
     const url = `${API_BASE}/api/reviews/nick/${playerNick}?page=${page}&limit=${limit}`;
     const response = await apiHeaders(url);
@@ -270,7 +335,7 @@ export async function fetchReviewsByPlayer(playerNick, days = 30, page = 0, limi
     // Handle paginated response
     if (response && typeof response === 'object' && 'content' in response) {
       // Backend pagination response format
-      return {
+      const result = {
         items: Array.isArray(response.content) 
           ? response.content.map((review) => ({
               id: review.id,
@@ -287,10 +352,18 @@ export async function fetchReviewsByPlayer(playerNick, days = 30, page = 0, limi
         totalElements: response.totalElements || 0,
         limit: response.size || limit
       };
+      
+      // Cache the result
+      reviewsCache.set(cacheKey, {
+        data: result,
+        timestamp: Date.now()
+      });
+      
+      return result;
     } else {
       // Fallback to previous behavior for non-paginated response
       const list = Array.isArray(response) ? response : [];
-      return {
+      const result = {
         items: list.map((review) => ({
           id: review.id,
           comment: review.review,
@@ -305,6 +378,14 @@ export async function fetchReviewsByPlayer(playerNick, days = 30, page = 0, limi
         totalElements: list.length,
         limit: limit
       };
+      
+      // Cache the result
+      reviewsCache.set(cacheKey, {
+        data: result,
+        timestamp: Date.now()
+      });
+      
+      return result;
     }
   } catch {
     return {
