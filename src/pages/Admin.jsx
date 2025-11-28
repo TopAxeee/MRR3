@@ -1,36 +1,6 @@
 // src/pages/Admin.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import Paper from "@mui/material/Paper";
-import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import IconButton from "@mui/material/IconButton";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
-import Snackbar from "@mui/material/Snackbar";
-import Alert from "@mui/material/Alert";
-import FormControl from "@mui/material/FormControl";
-import InputLabel from "@mui/material/InputLabel";
-import OutlinedInput from "@mui/material/OutlinedInput";
-import CircularProgress from "@mui/material/CircularProgress";
-import Chip from "@mui/material/Chip";
-import Pagination from "@mui/material/Pagination";
-import PaginationItem from "@mui/material/PaginationItem";
 
 import { 
   listRecentPlayers, 
@@ -43,6 +13,43 @@ import {
   checkAdminAccess,
   fetchReviewsByUserId
 } from "../services/api";
+import Pagination from "../components/Pagination";
+
+// Material UI Components
+import {
+  Box,
+  Button,
+  Typography,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Snackbar,
+  Alert,
+  Tabs,
+  Tab,
+  IconButton,
+  Chip,
+  Pagination as MuiPagination,
+  PaginationItem,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  OutlinedInput
+} from "@mui/material";
+
+// Material UI Icons
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 
 export default function Admin() {
   const [tabValue, setTabValue] = useState(0);
@@ -62,6 +69,12 @@ export default function Admin() {
   const [detailView, setDetailView] = useState(null); // For player/user detail view
   const [detailReviews, setDetailReviews] = useState([]);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [detailPagination, setDetailPagination] = useState({
+    currentPage: 0,
+    totalPages: 0,
+    totalElements: 0,
+    limit: 10
+  }); // For pagination in detail views
   const [reviewsPagination, setReviewsPagination] = useState({
     currentPage: 0,
     totalPages: 0,
@@ -249,37 +262,60 @@ export default function Admin() {
   };
 
   // Function to view reviews for a specific player
-  const handleViewPlayerReviews = async (player) => {
+  const handleViewPlayerReviews = async (player, page = 0) => {
     setDetailLoading(true);
     setDetailView({ type: 'player', data: player });
     try {
-      const playerReviews = await fetchReviewsByPlayer(player.nickName);
+      const playerReviews = await fetchReviewsByPlayer(player.nickName, 30, page, 10);
       setDetailReviews(playerReviews.items || playerReviews);
+      setDetailPagination({
+        currentPage: playerReviews.currentPage,
+        totalPages: playerReviews.totalPages,
+        totalElements: playerReviews.totalElements,
+        limit: playerReviews.limit
+      });
     } catch (error) {
       console.error('Error fetching player reviews:', error);
       showSnackbar('Error loading player reviews', 'error');
       setDetailReviews([]);
+      setDetailPagination({
+        currentPage: 0,
+        totalPages: 0,
+        totalElements: 0,
+        limit: 10
+      });
     } finally {
       setDetailLoading(false);
     }
   };
 
   // Function to view reviews by a specific user
-  const handleViewUserReviews = async (review) => {
-    if (!review.owner?.id) {
-      showSnackbar('User information not available', 'error');
-      return;
-    }
-    
+  const handleViewUserReviews = async (review, page = 0) => {
     setDetailLoading(true);
-    setDetailView({ type: 'user', data: review.owner, playerName: review.playerNick });
+    setDetailView({ 
+      type: 'user', 
+      data: review.owner,
+      playerName: review.playerNick
+    });
     try {
-      const userReviews = await fetchReviewsByUserId(review.owner.id);
-      setDetailReviews(userReviews);
+      const userReviews = await fetchReviewsByUserId(review.owner.id, page, 10);
+      setDetailReviews(userReviews.items || userReviews);
+      setDetailPagination({
+        currentPage: userReviews.currentPage,
+        totalPages: userReviews.totalPages,
+        totalElements: userReviews.totalElements,
+        limit: userReviews.limit
+      });
     } catch (error) {
       console.error('Error fetching user reviews:', error);
       showSnackbar('Error loading user reviews', 'error');
       setDetailReviews([]);
+      setDetailPagination({
+        currentPage: 0,
+        totalPages: 0,
+        totalElements: 0,
+        limit: 10
+      });
     } finally {
       setDetailLoading(false);
     }
@@ -289,6 +325,12 @@ export default function Admin() {
   const handleBackToMain = () => {
     setDetailView(null);
     setDetailReviews([]);
+    setDetailPagination({
+      currentPage: 0,
+      totalPages: 0,
+      totalElements: 0,
+      limit: 10
+    });
   };
 
   const handleTabChange = (event, newValue) => {
@@ -369,6 +411,39 @@ export default function Admin() {
     player.nickName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Function to handle pagination changes in detail view
+  const handleDetailPageChange = async (newPage) => {
+    if (!detailView) return;
+    
+    setDetailLoading(true);
+    try {
+      if (detailView.type === 'player') {
+        const playerReviews = await fetchReviewsByPlayer(detailView.data.nickName, 30, newPage, 10);
+        setDetailReviews(playerReviews.items || playerReviews);
+        setDetailPagination({
+          currentPage: playerReviews.currentPage,
+          totalPages: playerReviews.totalPages,
+          totalElements: playerReviews.totalElements,
+          limit: playerReviews.limit
+        });
+      } else if (detailView.type === 'user') {
+        const userReviews = await fetchReviewsByUserId(detailView.data.id, newPage, 10);
+        setDetailReviews(userReviews.items || userReviews);
+        setDetailPagination({
+          currentPage: userReviews.currentPage,
+          totalPages: userReviews.totalPages,
+          totalElements: userReviews.totalElements,
+          limit: userReviews.limit
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+      showSnackbar('Error loading reviews', 'error');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
   // Show loading state while checking access
   if (accessLoading) {
     return (
@@ -432,58 +507,74 @@ export default function Admin() {
                 Review Details
               </Typography>
               <Typography>
-                Total Reviews: {detailReviews.length}
+                Total Reviews: {detailPagination.totalElements}
               </Typography>
             </Paper>
             
             {detailReviews.length > 0 ? (
-              <TableContainer component={Paper}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>{detailView.type === 'player' ? 'Reviewer' : 'Player'}</TableCell>
-                      <TableCell>Comment</TableCell>
-                      <TableCell>Grade</TableCell>
-                      <TableCell>Rank</TableCell>
-                      <TableCell>Date</TableCell>
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {detailReviews.map((review) => (
-                      <TableRow key={review.id}>
-                        <TableCell>
-                          {detailView.type === 'player' ? 
-                            (review.author || 'Anonymous') : 
-                            (review.playerNick || 'Unknown Player')
-                          }
-                        </TableCell>
-                        <TableCell>{review.comment}</TableCell>
-                        <TableCell>
-                          <Chip 
-                            label={`${review.grade}/5`} 
-                            color={review.grade >= 4 ? "success" : review.grade >= 3 ? "warning" : "error"}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>{review.rank || 'N/A'}</TableCell>
-                        <TableCell>
-                          {new Date(review.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <IconButton 
-                            onClick={() => handleDeleteClick(review)}
-                            color="error"
-                            size="small"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </TableCell>
+              <>
+                <TableContainer component={Paper}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>{detailView.type === 'player' ? 'Reviewer' : 'Player'}</TableCell>
+                        <TableCell>Comment</TableCell>
+                        <TableCell>Grade</TableCell>
+                        <TableCell>Rank</TableCell>
+                        <TableCell>Date</TableCell>
+                        <TableCell>Actions</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                    </TableHead>
+                    <TableBody>
+                      {detailReviews.map((review) => (
+                        <TableRow key={review.id}>
+                          <TableCell>
+                            {detailView.type === 'player' ? 
+                              (review.author || 'Anonymous') : 
+                              (review.playerNick || 'Unknown Player')
+                            }
+                          </TableCell>
+                          <TableCell>{review.comment}</TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={`${review.grade}/5`} 
+                              color={review.grade >= 4 ? "success" : review.grade >= 3 ? "warning" : "error"}
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell>{review.rank || 'N/A'}</TableCell>
+                          <TableCell>
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <IconButton 
+                              onClick={() => handleDeleteClick(review)}
+                              color="error"
+                              size="small"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                
+                {detailPagination.totalPages > 1 && (
+                  <Pagination 
+                    currentPage={detailPagination.currentPage} 
+                    totalPages={detailPagination.totalPages} 
+                    onPageChange={handleDetailPageChange} 
+                  />
+                )}
+                
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+                  <Typography variant="body2">
+                    Showing {detailReviews.length} of {detailPagination.totalElements} reviews
+                  </Typography>
+                </Box>
+              </>
             ) : (
               <Paper sx={{ p: 3, textAlign: 'center' }}>
                 <Typography>No reviews found.</Typography>
