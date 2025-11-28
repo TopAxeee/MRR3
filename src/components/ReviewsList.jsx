@@ -7,7 +7,7 @@ import ReviewItem from "./ReviewItem";
 import Pagination from "./Pagination";
 import { fetchReviewsByPlayer } from "../services/api";
 
-export default function ReviewsList({ playerNick }) {
+export default function ReviewsList({ playerNick, refreshKey }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
@@ -29,7 +29,7 @@ export default function ReviewsList({ playerNick }) {
     return () => {
       cancelled = true;
     };
-  }, [playerNick, currentPage]);
+  }, [playerNick, currentPage, refreshKey]);
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);

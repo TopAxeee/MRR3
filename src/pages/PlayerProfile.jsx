@@ -52,6 +52,7 @@ export default function PlayerProfile() {
   const [submitting, setSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isLinkedPlayer, setIsLinkedPlayer] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,11 +86,40 @@ export default function PlayerProfile() {
     return () => {
       cancelled = true;
     };
-  }, [nick]);
+  }, [nick, refreshKey]);
 
   const handleSuccessModalClose = () => {
     setShowSuccessModal(false);
-    window.location.reload();
+    // Instead of refreshing the page, fetch updated player data
+    loadPlayerData();
+    // Trigger refresh of reviews list
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const loadPlayerData = async () => {
+    try {
+      const p = await getPlayerByNick(nick);
+      setPlayer(p);
+      
+      // Check if this is the current user's linked player
+      if (p && isAuthenticated()) {
+        try {
+          const linkedPlayer = await getUserLinkedPlayer();
+          setIsLinkedPlayer(linkedPlayer && linkedPlayer.id === p.id);
+        } catch (err) {
+          console.error("Error checking if player is linked:", err);
+        }
+      }
+      
+      // Update document title when player data is loaded
+      if (p && p.nickName) {
+        document.title = `${p.nickName} MRR`;
+      } else {
+        document.title = `${nick} MRR`;
+      }
+    } catch (error) {
+      console.error("Error loading player data:", error);
+    }
   };
 
   const handleReviewSubmit = async (f) => {
@@ -128,11 +158,16 @@ export default function PlayerProfile() {
             isPlayerProfile={true}
           />
         </Paper>
+        <Divider sx={{ mb: 2 }} />
+        <Typography variant="h6" sx={{ mb: 1 }}>
+          All reviews
+        </Typography>
+        <ReviewsList playerNick={nick} refreshKey={refreshKey} />
         <SuccessModal
           open={showSuccessModal}
           onClose={handleSuccessModalClose}
           title="Review Submitted!"
-          message="Your review has been submitted successfully. The page will refresh to show your changes."
+          message="Your review has been submitted successfully. Player stats will update automatically."
         />
       </Box>
     );
@@ -192,14 +227,15 @@ export default function PlayerProfile() {
         <Typography variant="h6" sx={{ mb: 1 }}>
           All reviews
         </Typography>
-        <ReviewsList playerNick={player.nickName} />
+        <ReviewsList playerNick={player.nickName} refreshKey={refreshKey} />
 
         <SuccessModal
           open={showSuccessModal}
           onClose={handleSuccessModalClose}
           title="Review Submitted!"
-          message="Your review has been submitted successfully. The page will refresh to show your changes."
+          message="Your review has been submitted successfully. Player stats will update automatically."
         />
+
       </div>
     );
   }
