@@ -405,7 +405,13 @@ export async function fetchReviewsByUser() {
     if (!userId) return [];
     
     const url = `${API_BASE}/api/reviews/user`;
-    const list = await apiHeaders(url);
+    const response = await apiHeaders(url);
+    
+    // Handle paginated response
+    const list = response && typeof response === 'object' && 'content' in response 
+      ? response.content 
+      : Array.isArray(response) ? response : [];
+      
     return Array.isArray(list)
       ? list.map((review) => ({
           id: review.id,
