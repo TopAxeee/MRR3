@@ -111,12 +111,19 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
         onClick={handleFirst} 
         disabled={currentPage === 0}
         sx={{ 
-          bgcolor: "primary.main",
-          color: "white",
-          "&:hover": { bgcolor: "primary.dark" },
+          width: 36,
+          height: 36,
+          borderRadius: "50%",
+          background: "#1F2127",
+          color: "#A8ABB2",
+          "&:hover": { 
+            background: "linear-gradient(90deg, #7F5BFF, #0FD0FF)",
+            color: "#fff"
+          },
           "&.Mui-disabled": { 
-            bgcolor: "rgba(0, 0, 0, 0.12)",
-            color: "rgba(0, 0, 0, 0.26)"
+            background: "#1F2127",
+            color: "#A8ABB2",
+            opacity: 0.5
           }
         }}
       >
@@ -128,16 +135,25 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
         onClick={handlePrev} 
         disabled={currentPage === 0}
         sx={{ 
-          bgcolor: "primary.main",
-          color: "white",
-          "&:hover": { bgcolor: "primary.dark" },
+          width: 36,
+          height: 36,
+          minWidth: 36,
+          borderRadius: "50%",
+          background: "#1F2127",
+          color: "#A8ABB2",
+          fontWeight: "bold",
+          "&:hover": { 
+            background: "linear-gradient(90deg, #7F5BFF, #0FD0FF)",
+            color: "#fff"
+          },
           "&.Mui-disabled": { 
-            bgcolor: "rgba(0, 0, 0, 0.12)",
-            color: "rgba(0, 0, 0, 0.26)"
+            background: "#1F2127",
+            color: "#A8ABB2",
+            opacity: 0.5
           }
         }}
       >
-        Previous
+        ‹
       </Button>
       
       {/* Page numbers */}
@@ -145,7 +161,18 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
         {getPageNumbers().map((page, index) => {
           if (page === "ellipsis-start" || page === "ellipsis-end") {
             return (
-              <Typography key={index} variant="body2" sx={{ mx: 0.5 }}>
+              <Typography 
+                key={index} 
+                variant="body2" 
+                sx={{ 
+                  width: 36,
+                  height: 36,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#A8ABB2"
+                }}
+              >
                 ...
               </Typography>
             );
@@ -155,17 +182,17 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
             <Button
               key={page}
               onClick={() => onPageChange(page)}
-              variant={currentPage === page ? "contained" : "outlined"}
               sx={{
-                minWidth: "32px",
-                height: "32px",
-                bgcolor: currentPage === page ? "primary.main" : "white",
-                color: currentPage === page ? "white" : "primary.main",
-                borderColor: "primary.main",
+                width: 36,
+                height: 36,
+                minWidth: 36,
+                borderRadius: "50%",
+                background: currentPage === page ? "linear-gradient(90deg, #7F5BFF, #0FD0FF)" : "#1F2127",
+                color: currentPage === page ? "#fff" : "#A8ABB2",
+                fontWeight: "bold",
                 "&:hover": {
-                  bgcolor: currentPage === page ? "primary.dark" : "primary.light",
-                  color: "white",
-                  borderColor: "primary.dark"
+                  background: currentPage === page ? "linear-gradient(90deg, #7F5BFF, #0FD0FF)" : "linear-gradient(90deg, #7F5BFF, #0FD0FF)",
+                  color: "#fff"
                 }
               }}
             >
@@ -180,16 +207,25 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
         onClick={handleNext} 
         disabled={currentPage >= totalPages - 1}
         sx={{ 
-          bgcolor: "primary.main",
-          color: "white",
-          "&:hover": { bgcolor: "primary.dark" },
+          width: 36,
+          height: 36,
+          minWidth: 36,
+          borderRadius: "50%",
+          background: "#1F2127",
+          color: "#A8ABB2",
+          fontWeight: "bold",
+          "&:hover": { 
+            background: "linear-gradient(90deg, #7F5BFF, #0FD0FF)",
+            color: "#fff"
+          },
           "&.Mui-disabled": { 
-            bgcolor: "rgba(0, 0, 0, 0.12)",
-            color: "rgba(0, 0, 0, 0.26)"
+            background: "#1F2127",
+            color: "#A8ABB2",
+            opacity: 0.5
           }
         }}
       >
-        Next
+        ›
       </Button>
       
       {/* Last page button */}
@@ -197,12 +233,19 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
         onClick={handleLast} 
         disabled={currentPage >= totalPages - 1}
         sx={{ 
-          bgcolor: "primary.main",
-          color: "white",
-          "&:hover": { bgcolor: "primary.dark" },
+          width: 36,
+          height: 36,
+          borderRadius: "50%",
+          background: "#1F2127",
+          color: "#A8ABB2",
+          "&:hover": { 
+            background: "linear-gradient(90deg, #7F5BFF, #0FD0FF)",
+            color: "#fff"
+          },
           "&.Mui-disabled": { 
-            bgcolor: "rgba(0, 0, 0, 0.12)",
-            color: "rgba(0, 0, 0, 0.26)"
+            background: "#1F2127",
+            color: "#A8ABB2",
+            opacity: 0.5
           }
         }}
       >
@@ -234,9 +277,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
           size="small"
           sx={{ 
             height: "40px",
-            bgcolor: "primary.main",
-            color: "white",
-            "&:hover": { bgcolor: "primary.dark" }
+            fontWeight: "bold"
           }}
         >
           Go

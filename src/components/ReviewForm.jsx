@@ -78,7 +78,7 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
   const userAuthenticated = isAuthenticated();
 
   return (
-    <Paper sx={{ p: 2, mb: 2, position: "relative" }}>
+    <Paper sx={{ p: 2, mb: 2, position: "relative", background: "#15171C", borderRadius: 12 }}>
       {!userAuthenticated && (
         <Box
           sx={{
@@ -92,21 +92,32 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
             alignItems: "center",
             justifyContent: "center",
             zIndex: 10,
-            borderRadius: 1,
+            borderRadius: 12,
           }}
         >
           <Box sx={{ textAlign: "center", p: 2 }}>
-            <Typography variant="h6" color="white" sx={{ mb: 2 }}>
+            <Typography variant="h6" sx={{ mb: 2, color: "#E4E6EB" }}>
               Authentication Required
             </Typography>
-            <Typography variant="body1" color="white" sx={{ mb: 2 }}>
+            <Typography variant="body1" sx={{ mb: 2, color: "#E4E6EB" }}>
               You need to be logged in to submit a review
             </Typography>
             <Button
               variant="contained"
-              color="primary"
               component={Link}
               href="/login"
+              sx={{
+                background: "linear-gradient(90deg, #7F5BFF, #0FD0FF)",
+                color: "white",
+                fontWeight: "bold",
+                borderRadius: 12,
+                padding: "12px 20px",
+                boxShadow: "none",
+                "&:hover": {
+                  background: "linear-gradient(90deg, #6642E0, #00B8E6)",
+                  boxShadow: "none",
+                }
+              }}
             >
               Login with Telegram
             </Button>
@@ -125,15 +136,71 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
           onChange={(e) => setPlayerNick(e.target.value)}
           required
           disabled={submitting || !userAuthenticated || isPlayerProfile}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              background: '#1A1C21',
+              borderRadius: 10,
+              color: '#E4E6EB',
+              '& fieldset': {
+                borderColor: '#30333B',
+              },
+              '&:hover fieldset': {
+                borderColor: '#7F5BFF',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#7F5BFF',
+              },
+            },
+            '& .MuiInputLabel-root': {
+              color: '#A8ABB2',
+            },
+            '& .MuiInputLabel-root.Mui-focused': {
+              color: '#7F5BFF',
+            },
+          }}
         />
 
         {!canReview && (
-          <Alert severity="warning">
+          <Alert 
+            severity="warning"
+            sx={{
+              background: "rgba(255, 165, 0, 0.15)",
+              color: "#FFA500",
+              borderRadius: 2,
+              borderLeft: "4px solid #FFA500",
+            }}
+          >
             You can only leave one review per player every 10 days. Please wait before submitting another review for this player.
           </Alert>
         )}
 
-        <FormControl fullWidth required disabled={submitting || !userAuthenticated}>
+        <FormControl 
+          fullWidth 
+          required 
+          disabled={submitting || !userAuthenticated}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              background: '#1A1C21',
+              borderRadius: 10,
+              color: '#E4E6EB',
+              '& fieldset': {
+                borderColor: '#30333B',
+              },
+              '&:hover fieldset': {
+                borderColor: '#7F5BFF',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#7F5BFF',
+              },
+            },
+            '& .MuiInputLabel-root': {
+              color: '#A8ABB2',
+            },
+            '& .MuiInputLabel-root.Mui-focused': {
+              color: '#7F5BFF',
+            },
+          }}
+        >
           <InputLabel>Rank</InputLabel>
           <Select
             value={rank}
@@ -141,7 +208,7 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
             label="Rank"
           >
             {RANK_NAMES.map((name, idx) => (
-              <MenuItem key={idx} value={idx}>
+              <MenuItem key={idx} value={idx} sx={{ color: "#E4E6EB", background: "#1A1C21" }}>
                 {name}
               </MenuItem>
             ))}
@@ -149,7 +216,7 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
         </FormControl>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Typography>Grade:</Typography>
+          <Typography sx={{ color: "#E4E6EB" }}>Grade:</Typography>
           <Rating
             name="grade"
             value={grade}
@@ -165,12 +232,50 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
           multiline
           rows={3}
           disabled={submitting || !userAuthenticated}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              background: '#1A1C21',
+              borderRadius: 10,
+              color: '#E4E6EB',
+              '& fieldset': {
+                borderColor: '#30333B',
+              },
+              '&:hover fieldset': {
+                borderColor: '#7F5BFF',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#7F5BFF',
+              },
+            },
+            '& .MuiInputLabel-root': {
+              color: '#A8ABB2',
+            },
+            '& .MuiInputLabel-root.Mui-focused': {
+              color: '#7F5BFF',
+            },
+          }}
         />
 
         <Button
           type="submit"
           variant="contained"
           disabled={!isFormValid || submitting || reviewCheckLoading || !userAuthenticated}
+          sx={{
+            background: "linear-gradient(90deg, #7F5BFF, #0FD0FF)",
+            color: "white",
+            fontWeight: "bold",
+            borderRadius: 12,
+            padding: "12px 20px",
+            boxShadow: "none",
+            "&:hover": {
+              background: "linear-gradient(90deg, #6642E0, #00B8E6)",
+              boxShadow: "none",
+            },
+            "&.Mui-disabled": {
+              background: "rgba(127, 91, 255, 0.3)",
+              color: "rgba(255, 255, 255, 0.7)",
+            }
+          }}
         >
           {submitting ? "Submitting…" : reviewCheckLoading ? "Checking..." : "Submit"}
         </Button>

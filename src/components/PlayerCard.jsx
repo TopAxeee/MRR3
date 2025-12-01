@@ -73,12 +73,13 @@ export default function PlayerCard({ player }) {
           height: 320,      // фиксируем только высоту (increased from 280 to 320)
           width: '100%',
           minWidth: 0,
-          borderRadius: 3,
+          borderRadius: 12,
           display: "flex",
           flexDirection: "column",
           transition: "all 0.3s ease",
-          background: "linear-gradient(145deg, #1e293b 0%, #334155 100%)",
-          border: "1px solid #334155",
+          background: "#15171C", // New card background from design
+          border: "none",
+          boxShadow: "none",
           "&:hover": {
             transform: "translateY(-4px)",
             boxShadow: "0 8px 25px -8px rgba(0, 0, 0, 0.5)",
@@ -122,7 +123,7 @@ export default function PlayerCard({ player }) {
                   width: 96, 
                   height: 96,
                   mx: "auto",
-                  border: "3px solid #334155"
+                  border: "none" // Removed border to match new design
                 }} 
               />
             ) : (
@@ -133,7 +134,8 @@ export default function PlayerCard({ player }) {
                   mx: "auto",
                   background: avatarGradient,
                   fontSize: "2rem",
-                  fontWeight: "bold"
+                  fontWeight: "bold",
+                  border: "none" // Removed border to match new design
                 }}
               >
                 {initials}
@@ -169,7 +171,8 @@ export default function PlayerCard({ player }) {
                 display: "-webkit-box",
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: "vertical",
-                overflow: "hidden"
+                overflow: "hidden",
+                color: "#E4E6EB" // Text color from new design
               }}
             >
               {player.nickName}
@@ -193,7 +196,7 @@ export default function PlayerCard({ player }) {
                     variant="body2" 
                     sx={{ 
                       fontWeight: "bold",
-                      color: "primary.light"
+                      color: "#7F5BFF" // Using primary color from new design
                     }}
                   >
                     {stats.avgGrade.toFixed(1)}
@@ -201,13 +204,13 @@ export default function PlayerCard({ player }) {
                 </Box>
                 <Typography 
                   variant="caption" 
-                  color="text.secondary"
+                  sx={{ color: "#A8ABB2" }} // Secondary text color from new design
                 >
                   {reviewCount} review{reviewCount !== 1 ? 's' : ''}
                 </Typography>
               </>
             ) : (
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{ color: "#A8ABB2" }}>
                 No reviews
               </Typography>
             )}
@@ -220,9 +223,16 @@ export default function PlayerCard({ player }) {
             onClick={handleViewProfile}
             sx={{
               width: "100%",
-              borderRadius: 2,
+              borderRadius: 12, // Matching button radius from new design
               fontWeight: "bold",
-              py: 1
+              py: 1,
+              background: "linear-gradient(90deg, #7F5BFF, #0FD0FF)", // Primary button gradient
+              color: "white",
+              boxShadow: "none",
+              "&:hover": {
+                background: "linear-gradient(90deg, #6642E0, #00B8E6)", // Hover state
+                boxShadow: "none",
+              }
             }}
           >
             View Profile

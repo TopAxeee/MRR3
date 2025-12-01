@@ -18,8 +18,9 @@ export default function SuccessModal({ open, onClose, title = "Success!", messag
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 2,
-          textAlign: "center"
+          borderRadius: 12,
+          textAlign: "center",
+          background: "#15171C", // Card background from new design
         }
       }}
     >
@@ -28,17 +29,17 @@ export default function SuccessModal({ open, onClose, title = "Success!", messag
           <CheckCircleIcon 
             sx={{ 
               fontSize: 48, 
-              color: "success.main",
+              color: "#03C988", // Success color from new design
               mb: 1
             }} 
           />
-          <Typography variant="h5" component="div">
+          <Typography variant="h5" component="div" sx={{ color: "#E4E6EB" }}>
             {title}
           </Typography>
         </Box>
       </DialogTitle>
       <DialogContent>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body1" sx={{ color: "#A8ABB2" }}>
           {message}
         </Typography>
       </DialogContent>
@@ -47,7 +48,19 @@ export default function SuccessModal({ open, onClose, title = "Success!", messag
           onClick={onClose} 
           variant="contained" 
           size="large"
-          sx={{ minWidth: 120 }}
+          sx={{ 
+            minWidth: 120,
+            background: "linear-gradient(90deg, #7F5BFF, #0FD0FF)",
+            color: "white",
+            fontWeight: "bold",
+            borderRadius: 12,
+            padding: "12px 20px",
+            boxShadow: "none",
+            "&:hover": {
+              background: "linear-gradient(90deg, #6642E0, #00B8E6)",
+              boxShadow: "none",
+            }
+          }}
         >
           OK
         </Button>

@@ -1,4 +1,4 @@
-  // src/components/RankBadge.jsx
+// src/components/RankBadge.jsx
 import React from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -36,7 +36,7 @@ export default function RankBadge({ rank, size = "medium" }) {
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
+        boxShadow: "none", // Removed box shadow to match new design
       }}
     >
       <Typography
@@ -44,7 +44,7 @@ export default function RankBadge({ rank, size = "medium" }) {
           color: "white",
           fontWeight: "bold",
           fontSize: sizes[size].fontSize,
-          textShadow: "1px 1px 2px rgba(0,0,0,0.5)",
+          textShadow: "none", // Removed text shadow to match new design
           lineHeight: 1,
         }}
       >
