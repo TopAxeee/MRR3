@@ -3,6 +3,7 @@ import React from "react";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import Link from "@mui/material/Link";
 
 import Stars from "./Stars";
 import RankBadge from "./RankBadge";
@@ -25,8 +26,17 @@ export default function ReviewItem({ review }) {
       >
         <Box>
           <Typography variant="subtitle1">
-            {"Anonymous"} 
-            {/* review.author ??  */}
+            {review.author ? (
+              review.playerNick ? (
+                <Link href={`/player/${review.playerNick}`} underline="hover">
+                  {review.author}
+                </Link>
+              ) : (
+                review.author
+              )
+            ) : (
+              "Anonymous"
+            )}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {new Date(review.createdAt ?? Date.now()).toLocaleString()}

@@ -307,8 +307,8 @@ export default function UserProfile() {
           
           {/* Tabbed interface for reviews */}
           <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 2 }}>
-            <Tab label="Reviews by You" />
-            <Tab label="Reviews on You" />
+            <Tab label="Reviews by You" sx={{ px: 4 }} />
+            <Tab label="Reviews on You" sx={{ px: 4 }} />
           </Tabs>
           
           {/* Reviews by You Tab */}
@@ -320,7 +320,8 @@ export default function UserProfile() {
                     <Box key={review.id} sx={{ mb: 2 }}>
                       <ReviewItem review={{
                         ...review,
-                        author: "You",
+                        author: review.playerNick,
+                        playerNick: review.playerNick,
                         createdAt: review.createdAt,
                         grade: review.grade,
                         rank: review.rank,
