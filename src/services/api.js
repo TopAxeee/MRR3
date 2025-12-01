@@ -344,7 +344,7 @@ export async function fetchReviewsByPlayer(playerNick, days = 30, page = 0, limi
               grade: review.grade,
               rank: review.rank,
               screenshotUrl: review.image,
-              author: review.owner?.userName || "Anonymous",
+              author: review.userNick?.userName || "Anonymous",
             }))
           : [],
         totalPages: response.totalPages || 0,
@@ -371,7 +371,7 @@ export async function fetchReviewsByPlayer(playerNick, days = 30, page = 0, limi
           grade: review.grade,
           rank: review.rank,
           screenshotUrl: review.image,
-          author: review.owner?.userName || "Anonymous",
+          author: review.userNick?.userName || "Anonymous",
         })),
         totalPages: 1,
         currentPage: 0,
@@ -452,7 +452,7 @@ export async function fetchReviewsOnLinkedPlayer(page = 0, limit = 10) {
               grade: review.grade,
               rank: review.rank,
               screenshotUrl: review.image,
-              author: review.owner?.userName || "Anonymous",
+              author: review.userNick?.userName || "Anonymous",
             }))
           : [],
         totalPages: response.totalPages || 0,
@@ -471,7 +471,7 @@ export async function fetchReviewsOnLinkedPlayer(page = 0, limit = 10) {
           grade: review.grade,
           rank: review.rank,
           screenshotUrl: review.image,
-          author: review.owner?.userName || "Anonymous",
+          author: review.userNick?.userName || "Anonymous",
         })),
         totalPages: 1,
         currentPage: 0,
@@ -527,8 +527,8 @@ export async function getAllReviews() {
           grade: review.grade,
           rank: review.rank,
           screenshotUrl: review.image,
-          playerNick: review.player?.nickName || "Unknown Player",
-          author: review.owner?.userName || "Anonymous",
+          playerNick: review.playerNick?.nickName || "Unknown Player",
+          author: review.userNick?.userName || "Anonymous",
         }))
       : [];
   } catch {
@@ -554,8 +554,8 @@ export async function fetchReviewsByUserId(userId, page = 0, limit = 10) {
               grade: review.grade,
               rank: review.rank,
               screenshotUrl: review.image,
-              playerNick: review.player?.nickName || "Unknown Player",
-              author: review.owner?.userName || "Anonymous",
+              playerNick: review.playerNick?.nickName || "Unknown Player",
+              author: review.userNick?.userName || "Anonymous",
             }))
           : [],
         totalPages: response.totalPages || 0,
@@ -574,8 +574,8 @@ export async function fetchReviewsByUserId(userId, page = 0, limit = 10) {
           grade: review.grade,
           rank: review.rank,
           screenshotUrl: review.image,
-          playerNick: review.player?.nickName || "Unknown Player",
-          author: review.owner?.userName || "Anonymous",
+          playerNick: review.playerNick?.nickName || "Unknown Player",
+          author: review.userNick?.userName || "Anonymous",
         })),
         totalPages: 1,
         currentPage: 0,
@@ -623,8 +623,8 @@ export async function getAdminReviews(playerNick, owner, page = 0, limit = 20) {
               rank: review.rank,
               screenshotUrl: review.image,
               playerNick: review.player?.nickName || "Unknown Player",
-              author: review.owner?.userName || "Anonymous",
-              owner: review.owner // Include full owner object for admin actions
+              author: review.userNick?.userName || "Anonymous",
+              owner: review.userNick // Include full owner object for admin actions
             }))
           : [],
         totalPages: response.totalPages || 0,
@@ -644,8 +644,8 @@ export async function getAdminReviews(playerNick, owner, page = 0, limit = 20) {
           rank: review.rank,
           screenshotUrl: review.image,
           playerNick: review.player?.nickName || "Unknown Player",
-          author: review.owner?.userName || "Anonymous",
-          owner: review.owner // Include full owner object for admin actions
+          author: review.userNick?.userName || "Anonymous",
+          owner: review.userNick // Include full owner object for admin actions
         })),
         totalPages: 1,
         currentPage: 0,
