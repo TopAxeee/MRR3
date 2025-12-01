@@ -154,14 +154,15 @@ export default function PlayerProfile() {
       
       setErrorModal({
         open: true,
-        title: "Review Submission Limit",
-        message: `You can only leave one review per player every 10 days. Please wait until ${date} to submit another review for this player.`
-      });
+        title: "error",
+        message: "error"
+      }
+      );
     } else if (error.message && error.message.startsWith("403")) {
       setErrorModal({
         open: true,
         title: "Permission Denied",
-        message: "You don't have permission to submit this review. Please make sure you're logged in and try again."
+        message: `You can only leave one review per player every 10 days. Please wait until ${date} to submit another review for this player.`
       });
     } else if (error.message && error.message.startsWith("500")) {
       setErrorModal({
