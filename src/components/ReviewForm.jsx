@@ -12,9 +12,10 @@ import Button from "@mui/material/Button";
 import Rating from "@mui/material/Rating";
 import Alert from "@mui/material/Alert";
 import Link from "@mui/material/Link";
+import Autocomplete from "@mui/material/Autocomplete"; // Added Autocomplete component
 
 import { RANK_NAMES } from "../utils";
-import { canUserReviewPlayer, getPlayerByNick, isAuthenticated } from "../services/api";
+import { canUserReviewPlayer, isAuthenticated, searchPlayers } from "../services/api"; // Added searchPlayers
 
 export default function ReviewForm({ initialNick = "", onSubmit, submitting = false, isPlayerProfile = false, onSuccess, onError }) {
   const [playerNick, setPlayerNick] = useState(initialNick);
@@ -24,6 +25,8 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
   const [canReview, setCanReview] = useState(true);
   const [reviewCheckLoading, setReviewCheckLoading] = useState(false);
   const [playerId, setPlayerId] = useState(null);
+  const [searchResults, setSearchResults] = useState([]); // Added state for search results
+  const [loadingSearch, setLoadingSearch] = useState(false); // Added state for search loading
 
   // Check if user can review this player (10-day restriction)
   useEffect(() => {
@@ -32,8 +35,9 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
       
       try {
         setReviewCheckLoading(true);
-        // First get the player ID
-        const player = await getPlayerByNick(playerNick.trim());
+        // First get the player ID from search results if available
+        const players = await searchPlayers(playerNick.trim(), 5);
+        const player = players.find(p => p.nickName === playerNick.trim());
         if (player) {
           setPlayerId(player.id);
           // Then check if user can review this player
@@ -54,6 +58,30 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
     const timeoutId = setTimeout(checkReviewPermission, 500);
     return () => clearTimeout(timeoutId);
   }, [playerNick]);
+
+  // Search for players as user types
+  useEffect(() => {
+    const searchPlayersDebounced = async () => {
+      if (!playerNick.trim() || isPlayerProfile) {
+        setSearchResults([]);
+        return;
+      }
+
+      try {
+        setLoadingSearch(true);
+        const results = await searchPlayers(playerNick.trim(), 5);
+        setSearchResults(results);
+      } catch (err) {
+        console.error("Error searching players:", err);
+        setSearchResults([]);
+      } finally {
+        setLoadingSearch(false);
+      }
+    };
+
+    const timeoutId = setTimeout(searchPlayersDebounced, 300);
+    return () => clearTimeout(timeoutId);
+  }, [playerNick, isPlayerProfile]);
 
   const isFormValid = playerNick.trim() !== "" && rank !== "" && grade > 0 && canReview;
 
@@ -143,34 +171,52 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
         onSubmit={handleSubmit}
         sx={{ display: "flex", flexDirection: "column", gap: 2 }}
       >
-        <TextField
-          label="Player Nick"
+        {/* Modified player search with autocomplete */}
+        <Autocomplete
+          freeSolo
+          options={searchResults}
+          getOptionLabel={(option) => typeof option === 'string' ? option : option.nickName || ''}
           value={playerNick}
-          onChange={(e) => setPlayerNick(e.target.value)}
-          required
-          disabled={submitting || !userAuthenticated || isPlayerProfile}
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              background: '#1A1C21',
-              borderRadius: 10,
-              color: '#E4E6EB',
-              '& fieldset': {
-                borderColor: '#30333B',
-              },
-              '&:hover fieldset': {
-                borderColor: '#7F5BFF',
-              },
-              '&.Mui-focused fieldset': {
-                borderColor: '#7F5BFF',
-              },
-            },
-            '& .MuiInputLabel-root': {
-              color: '#A8ABB2',
-            },
-            '& .MuiInputLabel-root.Mui-focused': {
-              color: '#7F5BFF',
-            },
+          onInputChange={(_, newInputValue) => {
+            setPlayerNick(newInputValue);
           }}
+          onChange={(_, newValue) => {
+            if (newValue) {
+              const nick = typeof newValue === 'string' ? newValue : newValue.nickName;
+              setPlayerNick(nick);
+            }
+          }}
+          loading={loadingSearch}
+          disabled={submitting || !userAuthenticated || isPlayerProfile}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Player Nick"
+              required
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  background: '#1A1C21',
+                  borderRadius: 10,
+                  color: '#E4E6EB',
+                  '& fieldset': {
+                    borderColor: '#30333B',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#7F5BFF',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#7F5BFF',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: '#A8ABB2',
+                },
+                '& .MuiInputLabel-root.Mui-focused': {
+                  color: '#7F5BFF',
+                },
+              }}
+            />
+          )}
         />
 
         {!canReview && (
