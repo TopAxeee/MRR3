@@ -39,8 +39,6 @@ import {
   Tab,
   IconButton,
   Chip,
-  Pagination as MuiPagination,
-  PaginationItem,
   CircularProgress,
   FormControl,
   InputLabel,
@@ -76,6 +74,12 @@ export default function Admin() {
     limit: 10
   }); // For pagination in detail views
   const [reviewsPagination, setReviewsPagination] = useState({
+    currentPage: 0,
+    totalPages: 0,
+    totalElements: 0,
+    limit: 20
+  });
+  const [playersPagination, setPlayersPagination] = useState({
     currentPage: 0,
     totalPages: 0,
     totalElements: 0,
@@ -182,8 +186,27 @@ export default function Admin() {
     try {
       switch (tabValue) {
         case 0: // Players
-          const playerData = await listRecentPlayers(100);
-          setPlayers(playerData);
+          // Use pagination for players
+          const playerData = await listRecentPlayers(20, 0);
+          // Set pagination data if it's a paginated response
+          if (playerData && typeof playerData === 'object' && 'content' in playerData) {
+            setPlayers(playerData.items || []);
+            setPlayersPagination({
+              currentPage: playerData.currentPage,
+              totalPages: playerData.totalPages,
+              totalElements: playerData.totalElements,
+              limit: playerData.limit
+            });
+          } else {
+            // Fallback for non-paginated response
+            setPlayers(Array.isArray(playerData) ? playerData : []);
+            setPlayersPagination({
+              currentPage: 0,
+              totalPages: 1,
+              totalElements: Array.isArray(playerData) ? playerData.length : 0,
+              limit: 20
+            });
+          }
           break;
         case 1: // Reviews
           // Use the admin endpoint to get reviews with pagination
@@ -206,11 +229,42 @@ export default function Admin() {
     }
   };
 
-  // Function to handle reviews pagination
-  const handleReviewsPageChange = async (event, page) => {
+  // Function to handle players pagination
+  const handlePlayersPageChange = async (newPage) => {
     setLoading(true);
     try {
-      const reviewsData = await getAdminReviews(playerNickSearch, ownerNameSearch, page - 1, 20);
+      const playerData = await listRecentPlayers(20, newPage);
+      // Set pagination data if it's a paginated response
+      if (playerData && typeof playerData === 'object' && 'content' in playerData) {
+        setPlayers(playerData.items || []);
+        setPlayersPagination({
+          currentPage: playerData.currentPage,
+          totalPages: playerData.totalPages,
+          totalElements: playerData.totalElements,
+          limit: playerData.limit
+        });
+      } else {
+        // Fallback for non-paginated response
+        setPlayers(Array.isArray(playerData) ? playerData : []);
+        setPlayersPagination({
+          currentPage: newPage,
+          totalPages: newPage + 1,
+          totalElements: Array.isArray(playerData) ? playerData.length : 0,
+          limit: 20
+        });
+      }
+    } catch (error) {
+      showSnackbar('Error loading players', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to handle reviews pagination
+  const handleReviewsPageChange = async (newPage) => {
+    setLoading(true);
+    try {
+      const reviewsData = await getAdminReviews(playerNickSearch, ownerNameSearch, newPage, 20);
       setReviews(reviewsData.items);
       setReviewsPagination({
         currentPage: reviewsData.currentPage,
@@ -686,73 +740,89 @@ export default function Admin() {
       ) : (
         <>
           {tabValue === 0 && (
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Nickname</TableCell>
-                    <TableCell>Avg Grade</TableCell>
-                    <TableCell>Avg Rank</TableCell>
-                    <TableCell>Reviews Count</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredPlayers.map((player) => (
-                    <TableRow 
-                      key={player.id}
-                      sx={{ '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)', cursor: 'pointer' } }}
-                      onClick={() => handlePlayerRowClick(player)}
-                    >
-                      <TableCell component="th" scope="row">
-                        {player.nickName}
-                      </TableCell>
-                      <TableCell>
-                        {player.avgGrade !== undefined && player.avgGrade !== null ? 
-                          player.avgGrade.toFixed(1) : 'N/A'}
-                      </TableCell>
-                      <TableCell>
-                        {player.avgRank !== undefined && player.avgRank !== null ? 
-                          player.avgRank.toFixed(1) : 'N/A'}
-                      </TableCell>
-                      <TableCell>{player.reviewsCount || 0}</TableCell>
-                      <TableCell>
-                        <Button 
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewPlayerReviews(player);
-                          }}
-                          sx={{ mr: 1 }}
-                        >
-                          View Reviews
-                        </Button>
-                        <IconButton 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditPlayer(player);
-                          }}
-                          color="primary"
-                          size="small"
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteClick(player);
-                          }}
-                          color="error"
-                          size="small"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
+            <>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Nickname</TableCell>
+                      <TableCell>Avg Grade</TableCell>
+                      <TableCell>Avg Rank</TableCell>
+                      <TableCell>Reviews Count</TableCell>
+                      <TableCell>Actions</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {filteredPlayers.map((player) => (
+                      <TableRow 
+                        key={player.id}
+                        sx={{ '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)', cursor: 'pointer' } }}
+                        onClick={() => handlePlayerRowClick(player)}
+                      >
+                        <TableCell component="th" scope="row">
+                          {player.nickName}
+                        </TableCell>
+                        <TableCell>
+                          {player.avgGrade !== undefined && player.avgGrade !== null ? 
+                            player.avgGrade.toFixed(1) : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {player.avgRank !== undefined && player.avgRank !== null ? 
+                            player.avgRank.toFixed(1) : 'N/A'}
+                        </TableCell>
+                        <TableCell>{player.reviewsCount || 0}</TableCell>
+                        <TableCell>
+                          <Button 
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewPlayerReviews(player);
+                            }}
+                            sx={{ mr: 1 }}
+                          >
+                            View Reviews
+                          </Button>
+                          <IconButton 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditPlayer(player);
+                            }}
+                            color="primary"
+                            size="small"
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClick(player);
+                            }}
+                            color="error"
+                            size="small"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              
+              {playersPagination.totalPages > 1 && (
+                <Pagination 
+                  currentPage={playersPagination.currentPage} 
+                  totalPages={playersPagination.totalPages} 
+                  onPageChange={handlePlayersPageChange} 
+                />
+              )}
+              
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+                <Typography variant="body2">
+                  Showing {filteredPlayers.length} of {playersPagination.totalElements} players
+                </Typography>
+              </Box>
+            </>
           )}
           
           {tabValue === 1 && (
@@ -808,18 +878,11 @@ export default function Admin() {
               </TableContainer>
               
               {reviewsPagination.totalPages > 1 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                  <Pagination
-                    count={reviewsPagination.totalPages}
-                    page={reviewsPagination.currentPage + 1}
-                    onChange={handleReviewsPageChange}
-                    renderItem={(item) => (
-                      <PaginationItem
-                        {...item}
-                      />
-                    )}
-                  />
-                </Box>
+                <Pagination 
+                  currentPage={reviewsPagination.currentPage} 
+                  totalPages={reviewsPagination.totalPages} 
+                  onPageChange={handleReviewsPageChange} 
+                />
               )}
               
               <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>

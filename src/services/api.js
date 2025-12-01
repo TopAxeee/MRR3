@@ -272,18 +272,32 @@ export async function searchPlayers(query, limit = 12) {
 }
 
 // GET /api/players - Получить всех игроков. Сортировка по "свежести" создания
-export async function listRecentPlayers(limit = 12) {
-  const url = `${API_BASE}/api/players?limit=${limit}`;
+export async function listRecentPlayers(limit = 12, page = 0) {
+  const url = `${API_BASE}/api/players?page=${page}&limit=${limit}`;
   const response = await apiHeaders(url);
   // Handle paginated response
-  const list = response && typeof response === 'object' && 'content' in response 
-    ? response.content 
-    : Array.isArray(response) ? response : [];
-  // Process the list to extract avgGrade.parsedValue if it exists
-  return list.map(player => ({
-    ...player,
-    avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade
-  }));
+  if (response && typeof response === 'object' && 'content' in response) {
+    // Backend pagination response format
+    return {
+      items: Array.isArray(response.content) 
+        ? response.content.map(player => ({
+            ...player,
+            avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade
+          }))
+        : [],
+      totalPages: response.totalPages || 0,
+      currentPage: response.page || page,
+      totalElements: response.totalElements || 0,
+      limit: response.size || limit
+    };
+  } else {
+    // Fallback to previous behavior for non-paginated response
+    const list = Array.isArray(response) ? response : [];
+    return list.map(player => ({
+      ...player,
+      avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade
+    }));
+  }
 }
 
 export async function listAllPlayers() {
