@@ -15,7 +15,7 @@ import Stars from "../components/Stars";
 import ReviewForm from "../components/ReviewForm";
 import ReviewsList from "../components/ReviewsList";
 import SuccessModal from "../components/SuccessModal";
-import CustomSnackbar from "../components/Snackbar";
+import ErrorModal from "../components/ErrorModal";
 import RankBadge from "../components/RankBadge";
 import {
   getPlayerByNick,
@@ -52,9 +52,9 @@ export default function PlayerProfile() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [errorModal, setErrorModal] = useState({ open: false, title: "", message: "" });
   const [isLinkedPlayer, setIsLinkedPlayer] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
 
   useEffect(() => {
     let cancelled = false;
@@ -108,6 +108,10 @@ export default function PlayerProfile() {
     setRefreshKey(prev => prev + 1);
   };
 
+  const handleErrorModalClose = () => {
+    setErrorModal({ ...errorModal, open: false });
+  };
+
   const loadPlayerData = async () => {
     try {
       const p = await getPlayerByNick(nick);
@@ -139,10 +143,6 @@ export default function PlayerProfile() {
     }
   };
 
-  const handleSnackbarClose = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
-
   const handleError = (error) => {
     console.error("Error submitting review:", error);
     
@@ -152,28 +152,28 @@ export default function PlayerProfile() {
       const dateMatch = error.message.match(/(\d{4}-\d{2}-\d{2})/);
       const date = dateMatch ? dateMatch[1] : "soon";
       
-      setSnackbar({
+      setErrorModal({
         open: true,
-        message: `You can only leave one review per player every 10 days. Please wait until ${date} to submit another review for this player.`,
-        severity: "warning"
+        title: "Review Submission Limit",
+        message: `You can only leave one review per player every 10 days. Please wait until ${date} to submit another review for this player.`
       });
     } else if (error.message && error.message.startsWith("403")) {
-      setSnackbar({
+      setErrorModal({
         open: true,
-        message: "You don't have permission to submit this review. Please make sure you're logged in and try again.",
-        severity: "error"
+        title: "Permission Denied",
+        message: "You don't have permission to submit this review. Please make sure you're logged in and try again."
       });
     } else if (error.message && error.message.startsWith("500")) {
-      setSnackbar({
+      setErrorModal({
         open: true,
-        message: "Server error occurred while submitting your review. Please try again later.",
-        severity: "error"
+        title: "Server Error",
+        message: "Server error occurred while submitting your review. Please try again later."
       });
     } else {
-      setSnackbar({
+      setErrorModal({
         open: true,
-        message: "An error occurred while submitting your review. Please try again.",
-        severity: "error"
+        title: "Submission Error",
+        message: "An error occurred while submitting your review. Please try again."
       });
     }
   };
@@ -213,6 +213,7 @@ export default function PlayerProfile() {
             submitting={submitting}
             onSubmit={handleReviewSubmit}
             isPlayerProfile={true}
+            onSuccess={() => setShowSuccessModal(true)}
             onError={handleError}
           />
         </Paper>
@@ -228,11 +229,11 @@ export default function PlayerProfile() {
           message="Your review has been submitted successfully. Player stats will update automatically."
         />
         
-        <CustomSnackbar
-          open={snackbar.open}
-          onClose={handleSnackbarClose}
-          message={snackbar.message}
-          severity={snackbar.severity}
+        <ErrorModal
+          open={errorModal.open}
+          onClose={handleErrorModalClose}
+          title={errorModal.title}
+          message={errorModal.message}
         />
       </Box>
     );
@@ -285,6 +286,7 @@ export default function PlayerProfile() {
             submitting={submitting}
             onSubmit={handleReviewSubmit}
             isPlayerProfile={true}
+            onSuccess={() => setShowSuccessModal(true)}
             onError={handleError}
           />
         </Paper>
@@ -302,11 +304,11 @@ export default function PlayerProfile() {
           message="Your review has been submitted successfully. Player stats will update automatically."
         />
         
-        <CustomSnackbar
-          open={snackbar.open}
-          onClose={handleSnackbarClose}
-          message={snackbar.message}
-          severity={snackbar.severity}
+        <ErrorModal
+          open={errorModal.open}
+          onClose={handleErrorModalClose}
+          title={errorModal.title}
+          message={errorModal.message}
         />
       </div>
     );
