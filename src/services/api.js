@@ -569,19 +569,14 @@ export async function fetchReviewsOnLinkedPlayer(page = 0, limit = 10) {
 
 // POST /api/reviews - Создать отзыв
 export async function addReview(payload) {
-  try {
-    const res = await apiHeaders(`${API_BASE}/api/reviews`, {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-    return res?.id ?? null;
-  } catch (e) {
-    console.error("addReview failed:", e);
-    return null;
-  }
+  const res = await apiHeaders(`${API_BASE}/api/reviews`, {
+    method: "POST",
+    headers: { 
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  return res?.id ?? null;
 }
 
 // PATCH /api/reviews/{id} - Загрузить изображение для отзыва (ignored as per request)

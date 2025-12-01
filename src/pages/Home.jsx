@@ -142,13 +142,20 @@ export default function Home() {
           try {
             setSubmitting(true);
             const p = await createOrGetPlayerByName(f.playerNick);
-            await addReview({
+            const reviewId = await addReview({
               playerId: p.id,
               rank: f.rank,
               grade: f.grade,
               review: f.comment,
             });
-            setShowSuccessModal(true);
+            
+            // Only show success modal if we got a valid review ID back
+            if (reviewId) {
+              setShowSuccessModal(true);
+            } else {
+              // This shouldn't happen with our updated API service, but just in case
+              handleError(new Error("Failed to submit review - no ID returned"));
+            }
           } catch (error) {
             handleError(error);
             throw error; // Re-throw to be handled by ReviewForm
