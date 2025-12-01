@@ -399,21 +399,45 @@ export async function fetchReviewsByPlayer(playerNick, days = 30, page = 0, limi
 }
 
 // GET /api/reviews/user - Получить отзывы пользователя
-export async function fetchReviewsByUser() {
+export async function fetchReviewsByUser(page = 0, limit = 10) {
   try {
     const userId = getUserId();
-    if (!userId) return [];
+    if (!userId) return {
+      items: [],
+      totalPages: 0,
+      currentPage: 0,
+      totalElements: 0,
+      limit: limit
+    };
     
-    const url = `${API_BASE}/api/reviews/user`;
+    const url = `${API_BASE}/api/reviews/user?page=${page}&limit=${limit}`;
     const response = await apiHeaders(url);
     
     // Handle paginated response
-    const list = response && typeof response === 'object' && 'content' in response 
-      ? response.content 
-      : Array.isArray(response) ? response : [];
-      
-    return Array.isArray(list)
-      ? list.map((review) => ({
+    if (response && typeof response === 'object' && 'content' in response) {
+      // Backend pagination response format
+      return {
+        items: Array.isArray(response.content) 
+          ? response.content.map((review) => ({
+              id: review.id,
+              comment: review.review,
+              createdAt: review.created,
+              grade: review.grade,
+              rank: review.rank,
+              screenshotUrl: review.image,
+              playerNick: review.player?.nickName || "Unknown Player",
+            }))
+          : [],
+        totalPages: response.totalPages || 0,
+        currentPage: response.page || page,
+        totalElements: response.totalElements || 0,
+        limit: response.size || limit
+      };
+    } else {
+      // Fallback to previous behavior for non-paginated response
+      const list = Array.isArray(response) ? response : [];
+      return {
+        items: list.map((review) => ({
           id: review.id,
           comment: review.review,
           createdAt: review.created,
@@ -421,10 +445,21 @@ export async function fetchReviewsByUser() {
           rank: review.rank,
           screenshotUrl: review.image,
           playerNick: review.player?.nickName || "Unknown Player",
-        }))
-      : [];
+        })),
+        totalPages: 1,
+        currentPage: 0,
+        totalElements: list.length,
+        limit: limit
+      };
+    }
   } catch {
-    return [];
+    return {
+      items: [],
+      totalPages: 0,
+      currentPage: 0,
+      totalElements: 0,
+      limit: limit
+    };
   }
 }
 

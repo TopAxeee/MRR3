@@ -55,12 +55,19 @@ export default function UserProfile() {
   const [linking, setLinking] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [userReviews, setUserReviews] = useState([]);
+  const [userReviews, setUserReviews] = useState({ 
+    items: [], 
+    currentPage: 0, 
+    totalPages: 0, 
+    totalElements: 0,
+    limit: 10
+  });
   const [playerReviews, setPlayerReviews] = useState({ 
     items: [], 
     currentPage: 0, 
     totalPages: 0, 
-    totalElements: 0 
+    totalElements: 0,
+    limit: 10
   });
   const [activeTab, setActiveTab] = useState(0);
 
@@ -105,12 +112,21 @@ export default function UserProfile() {
   const loadReviews = async (player) => {
     try {
       // Load reviews by user
-      const userReviewsData = await fetchReviewsByUser();
+      const userReviewsData = await fetchReviewsByUser(0, 10);
       setUserReviews(userReviewsData);
       
       // Load reviews on player (first page)
       const playerReviewsData = await fetchReviewsOnLinkedPlayer(0, 10);
       setPlayerReviews(playerReviewsData);
+    } catch (err) {
+      console.error("Error loading reviews:", err);
+    }
+  };
+
+  const handleUserReviewsPageChange = async (newPage) => {
+    try {
+      const userReviewsData = await fetchReviewsByUser(newPage, 10);
+      setUserReviews(userReviewsData);
     } catch (err) {
       console.error("Error loading reviews:", err);
     }
@@ -298,9 +314,9 @@ export default function UserProfile() {
           {/* Reviews by You Tab */}
           {activeTab === 0 && (
             <Box>
-              {userReviews.length > 0 ? (
+              {userReviews.items.length > 0 ? (
                 <Box sx={{ mb: 3 }}>
-                  {userReviews.map((review) => (
+                  {userReviews.items.map((review) => (
                     <Box key={review.id} sx={{ mb: 2 }}>
                       <ReviewItem review={{
                         ...review,
@@ -313,6 +329,18 @@ export default function UserProfile() {
                       }} />
                     </Box>
                   ))}
+                  
+                  {userReviews.totalElements > 0 && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 1 }}>
+                      Showing {userReviews.items.length} of {userReviews.totalElements} reviews
+                    </Typography>
+                  )}
+                  
+                  <Pagination 
+                    currentPage={userReviews.currentPage} 
+                    totalPages={userReviews.totalPages} 
+                    onPageChange={handleUserReviewsPageChange} 
+                  />
                 </Box>
               ) : (
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
