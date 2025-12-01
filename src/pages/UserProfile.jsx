@@ -10,6 +10,8 @@ import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
 import Link from "@mui/material/Link";
 import CheckIcon from "@mui/icons-material/Check";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
 
 import { 
   isAuthenticated, 
@@ -60,6 +62,7 @@ export default function UserProfile() {
     totalPages: 0, 
     totalElements: 0 
   });
+  const [activeTab, setActiveTab] = useState(0);
 
   // Check if user is authenticated
   useEffect(() => {
@@ -286,63 +289,69 @@ export default function UserProfile() {
             View Full Player Profile
           </Button>
           
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Reviews by You
-            </Typography>
-            {userReviews.length > 0 ? (
-              <Box sx={{ mb: 3 }}>
-                {userReviews.map((review) => (
-                  <Box key={review.id} sx={{ mb: 2 }}>
-                    <Typography variant="subtitle1">
-                      Review for <Link href={`/player/${review.playerNick}`}>{review.playerNick}</Link>
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {new Date(review.createdAt).toLocaleString()}
-                    </Typography>
-                    <Typography sx={{ mt: 1 }}>
-                      {review.comment || "No comment"}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-            ) : (
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                You haven't left any reviews yet.
-              </Typography>
-            )}
-          </Box>
+          {/* Tabbed interface for reviews */}
+          <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 2 }}>
+            <Tab label="Reviews by You" />
+            <Tab label="Reviews on You" />
+          </Tabs>
           
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Reviews on Your Player Profile
-            </Typography>
-            {playerReviews.items.length > 0 ? (
-              <Box sx={{ mb: 3 }}>
-                {playerReviews.items.map((review) => (
-                  <Box key={review.id} sx={{ mb: 2 }}>
-                    <ReviewItem review={review} />
-                  </Box>
-                ))}
-                
-                {playerReviews.totalElements > 0 && (
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 1 }}>
-                    Showing {playerReviews.items.length} of {playerReviews.totalElements} reviews
-                  </Typography>
-                )}
-                
-                <Pagination 
-                  currentPage={playerReviews.currentPage} 
-                  totalPages={playerReviews.totalPages} 
-                  onPageChange={handlePlayerReviewsPageChange} 
-                />
-              </Box>
-            ) : (
-              <Typography variant="body2" color="text.secondary">
-                No reviews on your player profile yet.
-              </Typography>
-            )}
-          </Box>
+          {/* Reviews by You Tab */}
+          {activeTab === 0 && (
+            <Box>
+              {userReviews.length > 0 ? (
+                <Box sx={{ mb: 3 }}>
+                  {userReviews.map((review) => (
+                    <Box key={review.id} sx={{ mb: 2 }}>
+                      <ReviewItem review={{
+                        ...review,
+                        author: "You",
+                        createdAt: review.createdAt,
+                        grade: review.grade,
+                        rank: review.rank,
+                        comment: review.comment,
+                        screenshotUrl: review.screenshotUrl
+                      }} />
+                    </Box>
+                  ))}
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  You haven't left any reviews yet.
+                </Typography>
+              )}
+            </Box>
+          )}
+          
+          {/* Reviews on You Tab */}
+          {activeTab === 1 && (
+            <Box>
+              {playerReviews.items.length > 0 ? (
+                <Box sx={{ mb: 3 }}>
+                  {playerReviews.items.map((review) => (
+                    <Box key={review.id} sx={{ mb: 2 }}>
+                      <ReviewItem review={review} />
+                    </Box>
+                  ))}
+                  
+                  {playerReviews.totalElements > 0 && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 1 }}>
+                      Showing {playerReviews.items.length} of {playerReviews.totalElements} reviews
+                    </Typography>
+                  )}
+                  
+                  <Pagination 
+                    currentPage={playerReviews.currentPage} 
+                    totalPages={playerReviews.totalPages} 
+                    onPageChange={handlePlayerReviewsPageChange} 
+                  />
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  No reviews on your player profile yet.
+                </Typography>
+              )}
+            </Box>
+          )}
         </Paper>
       )}
     </Box>
