@@ -599,8 +599,8 @@ export async function getAllReviews() {
           grade: review.grade,
           rank: review.rank,
           screenshotUrl: review.image,
-          playerNick: review.playerNick?.nickName || "Unknown Player",
-          author: review.userNick?.userName || "Anonymous",
+          playerNick: review.playerNick || "Unknown Player",
+          author: review.userNick || "Anonymous",
         }))
       : [];
   } catch {
