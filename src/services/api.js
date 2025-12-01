@@ -277,25 +277,24 @@ export async function listRecentPlayers(limit = 12, page = 0) {
   const response = await apiHeaders(url);
   // Handle paginated response
   if (response && typeof response === 'object' && 'content' in response) {
-    // Backend pagination response format
+    // Backend pagination response format - preserve original structure and process player data
     return {
-      items: Array.isArray(response.content) 
+      ...response,
+      content: Array.isArray(response.content) 
         ? response.content.map(player => ({
             ...player,
-            avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade
+            avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade,
+            avgRank: player.avgRank?.parsedValue ?? player.avgRank
           }))
-        : [],
-      totalPages: response.totalPages || 0,
-      currentPage: response.page || page,
-      totalElements: response.totalElements || 0,
-      limit: response.size || limit
+        : []
     };
   } else {
     // Fallback to previous behavior for non-paginated response
     const list = Array.isArray(response) ? response : [];
     return list.map(player => ({
       ...player,
-      avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade
+      avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade,
+      avgRank: player.avgRank?.parsedValue ?? player.avgRank
     }));
   }
 }

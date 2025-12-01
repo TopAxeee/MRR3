@@ -188,22 +188,24 @@ export default function Admin() {
         case 0: // Players
           // Use pagination for players
           const playerData = await listRecentPlayers(20, 0);
-          // Set pagination data if it's a paginated response
+          // Handle paginated response properly
           if (playerData && typeof playerData === 'object' && 'content' in playerData) {
-            setPlayers(playerData.items || []);
+            // Paginated response format
+            setPlayers(playerData.content || []);
             setPlayersPagination({
-              currentPage: playerData.currentPage,
-              totalPages: playerData.totalPages,
-              totalElements: playerData.totalElements,
-              limit: playerData.limit
+              currentPage: playerData.page || 0,
+              totalPages: playerData.totalPages || 1,
+              totalElements: playerData.totalElements || playerData.content?.length || 0,
+              limit: playerData.limit || 20
             });
           } else {
-            // Fallback for non-paginated response
-            setPlayers(Array.isArray(playerData) ? playerData : []);
+            // Non-paginated response (array)
+            const playersArray = Array.isArray(playerData) ? playerData : [];
+            setPlayers(playersArray);
             setPlayersPagination({
               currentPage: 0,
               totalPages: 1,
-              totalElements: Array.isArray(playerData) ? playerData.length : 0,
+              totalElements: playersArray.length,
               limit: 20
             });
           }
@@ -223,6 +225,7 @@ export default function Admin() {
           break;
       }
     } catch (error) {
+      console.error('Error loading data:', error);
       showSnackbar('Error loading data', 'error');
     } finally {
       setLoading(false);
@@ -234,26 +237,29 @@ export default function Admin() {
     setLoading(true);
     try {
       const playerData = await listRecentPlayers(20, newPage);
-      // Set pagination data if it's a paginated response
+      // Handle paginated response properly
       if (playerData && typeof playerData === 'object' && 'content' in playerData) {
-        setPlayers(playerData.items || []);
+        // Paginated response format
+        setPlayers(playerData.content || []);
         setPlayersPagination({
-          currentPage: playerData.currentPage,
-          totalPages: playerData.totalPages,
-          totalElements: playerData.totalElements,
-          limit: playerData.limit
+          currentPage: playerData.page || newPage,
+          totalPages: playerData.totalPages || 1,
+          totalElements: playerData.totalElements || playerData.content?.length || 0,
+          limit: playerData.limit || 20
         });
       } else {
-        // Fallback for non-paginated response
-        setPlayers(Array.isArray(playerData) ? playerData : []);
+        // Non-paginated response (array)
+        const playersArray = Array.isArray(playerData) ? playerData : [];
+        setPlayers(playersArray);
         setPlayersPagination({
           currentPage: newPage,
           totalPages: newPage + 1,
-          totalElements: Array.isArray(playerData) ? playerData.length : 0,
+          totalElements: playersArray.length,
           limit: 20
         });
       }
     } catch (error) {
+      console.error('Error loading players:', error);
       showSnackbar('Error loading players', 'error');
     } finally {
       setLoading(false);
