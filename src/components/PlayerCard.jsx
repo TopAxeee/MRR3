@@ -77,7 +77,7 @@ export default function PlayerCard({ player }) {
           display: "flex",
           flexDirection: "column",
           transition: "all 0.3s ease",
-          background: "#15171C", // New card background from design
+          background: "#2a3b66", // New card background from design
           border: "none",
           boxShadow: "none",
           "&:hover": {
