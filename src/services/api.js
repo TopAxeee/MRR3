@@ -82,8 +82,31 @@ async function apiHeaders(url, opts = {}) {
   }
   const res = await fetch(url, opts);
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`${res.status} ${res.statusText}: ${text}`);
+    let errorMessage = `${res.status} ${res.statusText}`;
+    
+    try {
+      const text = await res.text();
+      // Try to parse as JSON first
+      try {
+        const json = JSON.parse(text);
+        // If it's a JSON error response, use the message field
+        if (json.message) {
+          errorMessage = `${res.status} ${res.statusText}: ${json.message}`;
+        } else {
+          errorMessage = `${res.status} ${res.statusText}: ${text}`;
+        }
+      } catch {
+        // If it's not JSON, use the raw text
+        if (text) {
+          errorMessage = `${res.status} ${res.statusText}: ${text}`;
+        }
+      }
+    } catch (parseError) {
+      // If we can't parse the error response, use the default message
+      console.warn("Could not parse error response:", parseError);
+    }
+    
+    throw new Error(errorMessage);
   }
   if (res.status === 204) {
     return null;
@@ -283,7 +306,7 @@ export async function listRecentPlayers(limit = 12, page = 0) {
       content: Array.isArray(response.content) 
         ? response.content.map(player => ({
             ...player,
-            avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade,
+            avgGrade:  player.avgGrade?.parsedValue ?? player.avgGrade,
             avgRank: player.avgRank?.parsedValue ?? player.avgRank
           }))
         : []

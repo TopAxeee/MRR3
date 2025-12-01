@@ -15,6 +15,7 @@ import Stars from "../components/Stars";
 import ReviewForm from "../components/ReviewForm";
 import ReviewsList from "../components/ReviewsList";
 import SuccessModal from "../components/SuccessModal";
+import CustomSnackbar from "../components/Snackbar";
 import RankBadge from "../components/RankBadge";
 import {
   getPlayerByNick,
@@ -53,6 +54,7 @@ export default function PlayerProfile() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isLinkedPlayer, setIsLinkedPlayer] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
 
   useEffect(() => {
     let cancelled = false;
@@ -137,6 +139,45 @@ export default function PlayerProfile() {
     }
   };
 
+  const handleSnackbarClose = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  const handleError = (error) => {
+    console.error("Error submitting review:", error);
+    
+    // Handle specific error cases
+    if (error.message && error.message.includes("REVIEW_TOO_EARLY")) {
+      // Extract the date from the error message if available
+      const dateMatch = error.message.match(/(\d{4}-\d{2}-\d{2})/);
+      const date = dateMatch ? dateMatch[1] : "soon";
+      
+      setSnackbar({
+        open: true,
+        message: `You can only leave one review per player every 10 days. Please wait until ${date} to submit another review for this player.`,
+        severity: "warning"
+      });
+    } else if (error.message && error.message.startsWith("403")) {
+      setSnackbar({
+        open: true,
+        message: "You don't have permission to submit this review. Please make sure you're logged in and try again.",
+        severity: "error"
+      });
+    } else if (error.message && error.message.startsWith("500")) {
+      setSnackbar({
+        open: true,
+        message: "Server error occurred while submitting your review. Please try again later.",
+        severity: "error"
+      });
+    } else {
+      setSnackbar({
+        open: true,
+        message: "An error occurred while submitting your review. Please try again.",
+        severity: "error"
+      });
+    }
+  };
+
   const handleReviewSubmit = async (f) => {
     try {
       setSubmitting(true);
@@ -149,7 +190,8 @@ export default function PlayerProfile() {
       });
       setShowSuccessModal(true);
     } catch (error) {
-      console.error("Error submitting review:", error);
+      handleError(error);
+      throw error; // Re-throw to be handled by ReviewForm
     } finally {
       setSubmitting(false);
     }
@@ -171,6 +213,7 @@ export default function PlayerProfile() {
             submitting={submitting}
             onSubmit={handleReviewSubmit}
             isPlayerProfile={true}
+            onError={handleError}
           />
         </Paper>
         <Divider sx={{ mb: 2 }} />
@@ -183,6 +226,13 @@ export default function PlayerProfile() {
           onClose={handleSuccessModalClose}
           title="Review Submitted!"
           message="Your review has been submitted successfully. Player stats will update automatically."
+        />
+        
+        <CustomSnackbar
+          open={snackbar.open}
+          onClose={handleSnackbarClose}
+          message={snackbar.message}
+          severity={snackbar.severity}
         />
       </Box>
     );
@@ -235,6 +285,7 @@ export default function PlayerProfile() {
             submitting={submitting}
             onSubmit={handleReviewSubmit}
             isPlayerProfile={true}
+            onError={handleError}
           />
         </Paper>
 
@@ -250,7 +301,13 @@ export default function PlayerProfile() {
           title="Review Submitted!"
           message="Your review has been submitted successfully. Player stats will update automatically."
         />
-
+        
+        <CustomSnackbar
+          open={snackbar.open}
+          onClose={handleSnackbarClose}
+          message={snackbar.message}
+          severity={snackbar.severity}
+        />
       </div>
     );
   }

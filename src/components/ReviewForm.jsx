@@ -16,7 +16,7 @@ import Link from "@mui/material/Link";
 import { RANK_NAMES } from "../utils";
 import { canUserReviewPlayer, getPlayerByNick, isAuthenticated } from "../services/api";
 
-export default function ReviewForm({ initialNick = "", onSubmit, submitting = false, isPlayerProfile = false }) {
+export default function ReviewForm({ initialNick = "", onSubmit, submitting = false, isPlayerProfile = false, onError }) {
   const [playerNick, setPlayerNick] = useState(initialNick);
   const [rank, setRank] = useState("");
   const [grade, setGrade] = useState(0);
@@ -57,21 +57,29 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
 
   const isFormValid = playerNick.trim() !== "" && rank !== "" && grade > 0 && canReview;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isFormValid || submitting) return;
 
-    onSubmit({
-      playerNick: playerNick.trim(),
-      rank: Number(rank),
-      grade: Number(grade),
-      comment: comment.trim(),
-      screenshotUrl: null,
-    });
-
-    setComment("");
-    setGrade(0);
-    setRank("");
+    try {
+      await onSubmit({
+        playerNick: playerNick.trim(),
+        rank: Number(rank),
+        grade: Number(grade),
+        comment: comment.trim(),
+        screenshotUrl: null,
+      });
+      
+      // Reset form only on successful submission
+      setComment("");
+      setGrade(0);
+      setRank("");
+    } catch (error) {
+      // Pass error to parent component for handling
+      if (onError) {
+        onError(error);
+      }
+    }
   };
 
   // Check if user is authenticated
