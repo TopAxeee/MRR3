@@ -630,9 +630,6 @@ export default function Admin() {
                 )}
                 
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
-                  <Typography variant="body2">
-                    Showing {detailReviews.length} of {detailPagination.totalElements} reviews
-                  </Typography>
                 </Box>
               </>
             ) : (
@@ -892,9 +889,6 @@ export default function Admin() {
               )}
               
               <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
-                <Typography variant="body2">
-                  Showing {reviews.length} of {reviewsPagination.totalElements} reviews
-                </Typography>
               </Box>
             </>
           )}
