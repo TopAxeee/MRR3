@@ -8,11 +8,13 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import CardActionArea from "@mui/material/CardActionArea";
 import Button from "@mui/material/Button";
+import CheckIcon from "@mui/icons-material/Check";
 
 import Stars from "./Stars";
 import RankBadge from "./RankBadge";
 import { RANK_NAMES } from "../utils";
 import { clamp } from "../utils";
+import { isAuthenticated, getCurrentUser } from "../services/api";
 
 // Функция для генерации градиента на основе строки
 const generateGradient = (str) => {
@@ -41,6 +43,23 @@ export default function PlayerCard({ player }) {
     () => generateGradient(player?.nickName || ""),
     [player?.nickName]
   );
+
+  // Check if this player is linked to the current authenticated user
+  const [isLinkedPlayer, setIsLinkedPlayer] = useState(false);
+  
+  useEffect(() => {
+    if (isAuthenticated() && player?.id) {
+      try {
+        const currentUser = getCurrentUser();
+        // Check if the current user has a linked player that matches this player's ID
+        if (currentUser && currentUser.playerId === player.id) {
+          setIsLinkedPlayer(true);
+        }
+      } catch (error) {
+        console.error("Error checking if player is linked:", error);
+      }
+    }
+  }, [player]);
 
   // Use player stats directly from the player object
   const stats = {
@@ -176,6 +195,16 @@ export default function PlayerCard({ player }) {
               }}
             >
               {player.nickName}
+              {isLinkedPlayer && (
+                <CheckIcon 
+                  color="success" 
+                  sx={{ 
+                    fontSize: "1rem", 
+                    ml: 0.5,
+                    verticalAlign: "middle"
+                  }} 
+                />
+              )}
             </Typography>
           </Box>
 
