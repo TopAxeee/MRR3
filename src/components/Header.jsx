@@ -68,21 +68,6 @@ export default function Header() {
           Marvel Rivals Reviews
         </Typography>
         
-        <Button 
-          component={Link} 
-          to="/leaderboard" 
-          color="inherit"
-          sx={{
-            fontWeight: "bold",
-            "&:hover": {
-              backgroundColor: "rgba(255, 255, 255, 0.1)"
-            },
-            mr: 1
-          }}
-        >
-          Leaderboard
-        </Button>
-        
         {user ? (
           <>
             <Button 
@@ -99,18 +84,53 @@ export default function Header() {
             >
               My Profile
             </Button>
-            <Typography 
-              variant="body1" 
-              sx={{ 
-                color: "white", 
-                mr: 1,
-                display: { xs: 'none', sm: 'block' }
+            <Button 
+              component={Link} 
+              to="/leaderboard" 
+              color="inherit"
+              sx={{
+                fontWeight: "bold",
+                "&:hover": {
+                  backgroundColor: "rgba(255, 255, 255, 0.1)"
+                },
+                mr: 1
               }}
             >
-              Hello, {user.first_name || user.firstName || 'User'}
-            </Typography>
+              Leaderboard
+            </Button>
             <Button 
               onClick={handleLogout}
+              color="inherit"
+              sx={{
+                fontWeight: "bold",
+                "&:hover": {
+                  backgroundColor: "rgba(255, 255, 255, 0.1)"
+                },
+                mr: 1
+              }}
+            >
+              Logout
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button 
+              component={Link} 
+              to="/leaderboard" 
+              color="inherit"
+              sx={{
+                fontWeight: "bold",
+                "&:hover": {
+                  backgroundColor: "rgba(255, 255, 255, 0.1)"
+                },
+                mr: 1
+              }}
+            >
+              Leaderboard
+            </Button>
+            <Button 
+              component={Link} 
+              to="/login" 
               color="inherit"
               sx={{
                 fontWeight: "bold",
@@ -119,23 +139,9 @@ export default function Header() {
                 }
               }}
             >
-              Logout
+              Login
             </Button>
           </>
-        ) : (
-          <Button 
-            component={Link} 
-            to="/login" 
-            color="inherit"
-            sx={{
-              fontWeight: "bold",
-              "&:hover": {
-                backgroundColor: "rgba(255, 255, 255, 0.1)"
-              }
-            }}
-          >
-            Login
-          </Button>
         )}
         
         {user && isAdmin() && (
