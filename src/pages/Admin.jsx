@@ -590,7 +590,7 @@ export default function Admin() {
                         <TableRow key={review.id}>
                           <TableCell>
                             {detailView.type === 'player' ? 
-                              (review.author || 'Anonymous') : 
+                              (review.userNick || 'Anonymous') : 
                               (review.playerNick || 'Unknown Player')
                             }
                           </TableCell>
