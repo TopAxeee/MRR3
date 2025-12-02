@@ -3,26 +3,31 @@ export const API_BASE = import.meta.env?.VITE_API_BASE || "https://marvel-rivals
 
 // =============================================================================
 // AUTHENTICATION FUNCTIONS
+// АВТОРИЗАЦИЯ
 // =============================================================================
 
 // Проверка авторизованности пользователя
+// Check if user is authenticated
 export function isAuthenticated() {
   return !!localStorage.getItem("telegramUser");
 }
 
 // Получить текущего пользователя
+// Get current user
 export function getCurrentUser() {  
   const userStr = localStorage.getItem("telegramUser");
   return userStr ? JSON.parse(userStr) : null;
 }
 
 // Получить Telegram ID текущего пользователя
+// Get Telegram ID of current user
 export function getUserId() {
   const user = getCurrentUser();
   return user?.telegramId;
 }
 
 // Проверка, имеет ли пользователь доступ к админке (через API)
+// Check if user has admin access (via API)
 export async function checkAdminAccess() {
   try {
     const userId = getUserId();
@@ -39,6 +44,7 @@ export async function checkAdminAccess() {
 }
 
 // Проверка, имеет ли пользователь доступ к админке (client-side)
+// Check if user has admin access (client-side)
 export function isAdmin() {
   const user = getCurrentUser();
   if (!user) return false;
@@ -63,15 +69,18 @@ export function isAdmin() {
 }
 
 // Выход пользователя (убираем данные из локального хранилища)
+// Logout user (remove data from local storage)
 export function logout() {
   localStorage.removeItem("telegramUser");
 }
 
 // =============================================================================
 // API HELPER FUNCTIONS
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ API
 // =============================================================================
 
 // Добавление Telegram ID в каждый заголовок
+// Add Telegram ID to each request header
 async function apiHeaders(url, opts = {}) {
   const userId = getUserId();
   if (userId) {
@@ -122,6 +131,7 @@ async function apiHeaders(url, opts = {}) {
 
 // =============================================================================
 // USER CONTROLLER
+// КОНТРОЛЛЕР ПОЛЬЗОВАТЕЛЕЙ
 // =============================================================================
 
 // Simple cache for user linked player data
@@ -129,6 +139,7 @@ const userPlayerCache = new Map();
 const USER_PLAYER_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // GET /api/users - Получить пользователя по TelegramId
+// GET /api/users - Get user by TelegramId
 export async function getUserLinkedPlayer() {
   const currentUser = getCurrentUser();
   if (!currentUser || !currentUser.telegramId) throw new Error("User not authenticated");
@@ -181,6 +192,7 @@ export async function getUserLinkedPlayer() {
 }
 
 // PATCH /api/users - Привязать игрока к пользователю
+// PATCH /api/users - Link player to user
 export async function linkUserToPlayer(playerId) {
   const userId = getUserId();
   if (!userId) throw new Error("User not authenticated");
@@ -208,10 +220,12 @@ export async function canUserReviewPlayer(playerId) {
 }
 
 // GET /api/users/all - Получить всех пользователей
+// GET /api/users/all - Get all users
 // Not implemented yet
 
 // =============================================================================
 // PLAYER CONTROLLER
+// КОНТРОЛЛЕР ИГРОКОВ
 // =============================================================================
 
 // Simple cache for player data to avoid duplicate requests
@@ -219,6 +233,7 @@ const playerCache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // POST /api/players - Создать нового игрока
+// POST /api/players - Create new player
 export async function createOrGetPlayerByName(nickName) {
   const body = JSON.stringify({ nickName });
   try {
@@ -237,6 +252,7 @@ export async function createOrGetPlayerByName(nickName) {
 }
 
 // GET /api/players/nick/{nick} - Получить игрока
+// GET /api/players/nick/{nick} - Get player
 export async function getPlayerByNick(nick) {
   const cacheKey = nick.toLowerCase();
   
@@ -279,6 +295,7 @@ export async function getPlayerByNick(nick) {
 }
 
 // GET /api/players/search - Поиск игрока по нику (части ника)
+// GET /api/players/search - Search player by nick (partial nick)
 export async function searchPlayers(query, limit = 12) {
   if (!query) return listRecentPlayers(limit);
   const url = `${API_BASE}/api/players/search?nick=${encodeURIComponent(query)}&limit=${limit}`;
@@ -295,6 +312,7 @@ export async function searchPlayers(query, limit = 12) {
 }
 
 // GET /api/players - Получить всех игроков. Сортировка по "свежести" создания
+// GET /api/players - Get all players. Sort by "freshness" of creation
 export async function listRecentPlayers(limit = 12, page = 0) {
   const url = `${API_BASE}/api/players?page=${page}&limit=${limit}`;
   const response = await apiHeaders(url);
@@ -338,10 +356,12 @@ export async function listAllPlayers() {
 }
 
 // PATCH /api/players/{nick} - Загрузить изображение для игрока (ignored as per request)
+// PATCH /api/players/{nick} - Upload image for player (ignored as per request)
 // Not implemented
 
 // =============================================================================
 // REVIEW CONTROLLER
+// КОНТРОЛЛЕР ОТЗЫВОВ
 // =============================================================================
 
 // Simple cache for reviews data
@@ -349,6 +369,7 @@ const reviewsCache = new Map();
 const REVIEWS_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
 
 // GET /api/reviews/nick/{nick} - Получить отзывы игрока
+// GET /api/reviews/nick/{nick} - Get player reviews
 // Updated to support pagination
 export async function fetchReviewsByPlayer(playerNick, days = 30, page = 0, limit = 10) {
   const cacheKey = `${playerNick.toLowerCase()}_${days}_${page}_${limit}`;
@@ -380,7 +401,7 @@ export async function fetchReviewsByPlayer(playerNick, days = 30, page = 0, limi
               grade: review.grade,
               rank: review.rank,
               screenshotUrl: review.image,
-              author: review.userNick?.userName || "Anonymous",
+              author: review.userNick || "Anonymous",
             }))
           : [],
         totalPages: response.totalPages || 0,
@@ -407,7 +428,7 @@ export async function fetchReviewsByPlayer(playerNick, days = 30, page = 0, limi
           grade: review.grade,
           rank: review.rank,
           screenshotUrl: review.image,
-          author: review.userNick?.userName || "Anonymous",
+          author: review.userNick || "Anonymous",
         })),
         totalPages: 1,
         currentPage: 0,
@@ -435,6 +456,7 @@ export async function fetchReviewsByPlayer(playerNick, days = 30, page = 0, limi
 }
 
 // GET /api/reviews/user - Получить отзывы пользователя
+// GET /api/reviews/user - Get user reviews
 export async function fetchReviewsByUser(page = 0, limit = 10) {
   try {
     const userId = getUserId();
@@ -529,7 +551,7 @@ export async function fetchReviewsOnLinkedPlayer(page = 0, limit = 10) {
               grade: review.grade,
               rank: review.rank,
               screenshotUrl: review.image,
-              author: review.userNick?.userName || "Anonymous",
+              author: review.userNick || "Anonymous",
             }))
           : [],
         totalPages: response.totalPages || 0,
@@ -548,7 +570,7 @@ export async function fetchReviewsOnLinkedPlayer(page = 0, limit = 10) {
           grade: review.grade,
           rank: review.rank,
           screenshotUrl: review.image,
-          author: review.userNick?.userName || "Anonymous",
+          author: review.userNick || "Anonymous",
         })),
         totalPages: 1,
         currentPage: 0,
@@ -568,6 +590,7 @@ export async function fetchReviewsOnLinkedPlayer(page = 0, limit = 10) {
 }
 
 // POST /api/reviews - Создать отзыв
+// POST /api/reviews - Create review
 export async function addReview(payload) {
   const res = await apiHeaders(`${API_BASE}/api/reviews`, {
     method: "POST",
@@ -580,13 +603,16 @@ export async function addReview(payload) {
 }
 
 // PATCH /api/reviews/{id} - Загрузить изображение для отзыва (ignored as per request)
+// PATCH /api/reviews/{id} - Upload image for review (ignored as per request)
 // Not implemented
 
 // =============================================================================
 // ADMIN CONTROLLER
+// АДМИН-КОНТРОЛЛЕР
 // =============================================================================
 
 // GET /api/admin/reviews - Получить все отзывы
+// GET /api/admin/reviews - Get all reviews
 export async function getAllReviews() {
   try {
     const url = `${API_BASE}/api/admin/reviews`;
@@ -609,6 +635,7 @@ export async function getAllReviews() {
 }
 
 // GET /api/admin/reviews/user/{userId} - Получить отзывы пользователя (для админов)
+// GET /api/admin/reviews/user/{userId} - Get user reviews (for admins)
 export async function fetchReviewsByUserId(userId, page = 0, limit = 10) {
   try {
     const url = `${API_BASE}/api/admin/reviews/user/${userId}?page=${page}&limit=${limit}`;
@@ -626,8 +653,8 @@ export async function fetchReviewsByUserId(userId, page = 0, limit = 10) {
               grade: review.grade,
               rank: review.rank,
               screenshotUrl: review.image,
-              playerNick: review.playerNick?.nickName || "Unknown Player",
-              author: review.userNick?.userName || "Anonymous",
+              playerNick: review.playerNick || "Unknown Player",
+              author: review.userNick || "Anonymous",
             }))
           : [],
         totalPages: response.totalPages || 0,
@@ -646,8 +673,8 @@ export async function fetchReviewsByUserId(userId, page = 0, limit = 10) {
           grade: review.grade,
           rank: review.rank,
           screenshotUrl: review.image,
-          playerNick: review.playerNick?.nickName || "Unknown Player",
-          author: review.userNick?.userName || "Anonymous",
+          playerNick: review.playerNick || "Unknown Player",
+          author: review.userNick || "Anonymous",
         })),
         totalPages: 1,
         currentPage: 0,
@@ -667,6 +694,7 @@ export async function fetchReviewsByUserId(userId, page = 0, limit = 10) {
 }
 
 // GET /api/admin/reviews - Получить отзывы с пагинацией, поиск по нику игрока и автора
+// GET /api/admin/reviews - Get reviews with pagination, search by player nick and author
 export async function getAdminReviews(playerNick, owner, page = 0, limit = 20) {
   try {
     let url = `${API_BASE}/api/admin/reviews?page=${page}&limit=${limit}`;
@@ -738,6 +766,7 @@ export async function getAdminReviews(playerNick, owner, page = 0, limit = 20) {
 }
 
 // DELETE /api/admin/players/{nick} - Удалить игрока
+// DELETE /api/admin/players/{nick} - Delete player
 export async function deletePlayerByNick(nick) {
   try {
     return await apiHeaders(`${API_BASE}/api/admin/players/${encodeURIComponent(nick)}`, {
@@ -753,6 +782,7 @@ export async function deletePlayerByNick(nick) {
 }
 
 // DELETE /api/admin/reviews/{id} - Удалить отзыв
+// DELETE /api/admin/reviews/{id} - Delete review
 export async function deleteReviewById(id) {
   try {
     return await apiHeaders(`${API_BASE}/api/admin/reviews/${id}`, {
@@ -768,6 +798,7 @@ export async function deleteReviewById(id) {
 }
 
 // PATCH /api/admin/players/{nick} - Обновить никнейм игрока, сохраня отзывы
+// PATCH /api/admin/players/{nick} - Update player nickname, preserving reviews
 export async function updatePlayerNick(oldNick, newNick) {
   const body = JSON.stringify({ nickName: newNick });
   try {
