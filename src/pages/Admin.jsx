@@ -591,7 +591,7 @@ export default function Admin() {
                           <TableCell>
                             {detailView.type === 'player' ? 
                               (review.userNick || 'Anonymous') : 
-                              (review.playerNick || 'Unknown Player')
+                              (review.owner || 'Unknown Player')
                             }
                           </TableCell>
                           <TableCell>{review.comment}</TableCell>
