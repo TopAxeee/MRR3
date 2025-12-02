@@ -716,7 +716,7 @@ export async function getAdminReviews(playerNick, owner, page = 0, limit = 20) {
           rank: review.rank,
           screenshotUrl: review.image,
           playerNick: review.player?.nickName || "Unknown Player",
-          author: review.userNick?.userName || "Anonymous",
+          author: review.userNick || "Anonymous",
           owner: review.userNick // Include full owner object for admin actions
         })),
         totalPages: 1,
