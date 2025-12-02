@@ -859,7 +859,7 @@ export default function Admin() {
                             size="small"
                             onClick={() => handleViewUserReviews(review)}
                           >
-                            {review.author}
+                            {review.userNick}
                           </Button>
                         </TableCell>
                         <TableCell>
