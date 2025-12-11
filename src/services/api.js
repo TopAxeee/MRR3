@@ -232,6 +232,17 @@ export async function canUserReviewPlayer(playerId) {
 const playerCache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+// Вспомогательная функция для обработки данных игрока (мемоизирована)
+function processPlayerData(player) {
+  if (!player) return null;
+  
+  return {
+    ...player,
+    avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade,
+    avgRank: player.avgRank?.parsedValue ?? player.avgRank
+  };
+}
+
 // POST /api/players - Создать нового игрока
 // POST /api/players - Create new player
 export async function createOrGetPlayerByName(nickName) {
@@ -270,12 +281,9 @@ export async function getPlayerByNick(nick) {
   try {
     const url = `${API_BASE}/api/players/nick/${encodeURIComponent(nick)}`;
     const player = await apiHeaders(url);
-    // Process the player to extract avgGrade.parsedValue if it exists
+    // Process the player data using our helper function
     if (player) {
-      const processedPlayer = {
-        ...player,
-        avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade
-      };
+      const processedPlayer = processPlayerData(player);
       
       // Cache the processed player data
       playerCache.set(cacheKey, {
@@ -322,21 +330,13 @@ export async function listRecentPlayers(limit = 12, page = 0) {
     return {
       ...response,
       content: Array.isArray(response.content) 
-        ? response.content.map(player => ({
-            ...player,
-            avgGrade:  player.avgGrade?.parsedValue ?? player.avgGrade,
-            avgRank: player.avgRank?.parsedValue ?? player.avgRank
-          }))
+        ? response.content.map(player => processPlayerData(player))
         : []
     };
   } else {
     // Fallback to previous behavior for non-paginated response
     const list = Array.isArray(response) ? response : [];
-    return list.map(player => ({
-      ...player,
-      avgGrade: player.avgGrade?.parsedValue ?? player.avgGrade,
-      avgRank: player.avgRank?.parsedValue ?? player.avgRank
-    }));
+    return list.map(player => processPlayerData(player));
   }
 }
 

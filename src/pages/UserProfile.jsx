@@ -1,5 +1,5 @@
 // src/pages/UserProfile.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -189,6 +189,11 @@ export default function UserProfile() {
     );
   }
 
+  // Мемоизируем проверку на наличие связанного игрока
+  const hasLinkedPlayer = useMemo(() => {
+    return !!linkedPlayer;
+  }, [linkedPlayer]);
+
   return (
     <Box>
       <Typography variant="h4" sx={{ mb: 3 }}>
@@ -292,7 +297,7 @@ export default function UserProfile() {
         )}
       </Paper>
       
-      {linkedPlayer && (
+      {hasLinkedPlayer && (
         <Paper sx={{ p: 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             Player Profile

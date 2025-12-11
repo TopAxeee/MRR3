@@ -1,5 +1,5 @@
 // src/pages/PlayerProfile.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Avatar from "@mui/material/Avatar";
@@ -246,8 +246,12 @@ export default function PlayerProfile() {
       </Box>
     );
   } else {
-    // Use the same gradient generation as in PlayerCard
-    const avatarGradient = generateGradient(player.nickName || "");
+    // Мемоизируем градиент для аватара
+    const avatarGradient = useMemo(() => {
+      return generateGradient(player?.nickName || "");
+    }, [player?.nickName]);
+    
+    // Используем мемоизированный градиент
     const initials = player?.nickName?.[0]?.toUpperCase() ?? "?";
     
     // Use player stats directly from the player object

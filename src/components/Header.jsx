@@ -1,5 +1,5 @@
 // src/components/Header.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
@@ -50,6 +50,11 @@ export default function Header() {
     setUser(null);
     navigate("/");
   };
+
+  // Мемоизируем проверку на администратора
+  const isUserAdmin = useMemo(() => {
+    return user && isAdmin();
+  }, [user]);
 
   return (
     <AppBar position="static">
@@ -144,7 +149,7 @@ export default function Header() {
           </>
         )}
         
-        {user && isAdmin() && (
+        {isUserAdmin && (
           <Button 
             component={Link} 
             to="/admin" 
