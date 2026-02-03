@@ -57,7 +57,7 @@ const Login = () => {
         }}
       >
         <Typography variant="h4" sx={{ mb: 2 }}>
-          Welcome to Marvel Rivals Reviews
+          Welcome to Marvel Rivals Reviews test
         </Typography>
         
         <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
