@@ -161,7 +161,7 @@ const MockTelegramLogin = ({ onLoginSuccess, onError }) => {
         redirect: 'follow'
       };
       
-      const response = await fetch(`https://marvelrivalsapi.com/api/v2/player/?season&uid=${uid}`, requestOptions);
+      const response = await fetch(`https://marvelrivalsapi.com/api/v2/player/${uid}`, requestOptions);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
