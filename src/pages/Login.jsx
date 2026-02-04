@@ -7,6 +7,7 @@ import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import Alert from "@mui/material/Alert";
 import TelegramLogin from "../components/TelegramLogin";
+import MockTelegramLogin from "../components/MockTelegramLogin"; // Import the mock login component
 import { isAuthenticated } from "../services/api";
 
 const Login = () => {
@@ -80,6 +81,14 @@ const Login = () => {
         <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
           <TelegramLogin 
             botName={import.meta.env.VITE_TELEGRAM_BOT_NAME || "MarvelRivalsReviewsAuthBot"}
+            onLoginSuccess={handleLoginSuccess}
+            onError={handleLoginError}
+          />
+        </Box>
+        
+        {/* Add Mock Telegram Login Option */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', mt: 2 }}>
+          <MockTelegramLogin 
             onLoginSuccess={handleLoginSuccess}
             onError={handleLoginError}
           />
