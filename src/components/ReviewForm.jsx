@@ -15,7 +15,6 @@ import Link from "@mui/material/Link";
 import Autocomplete from "@mui/material/Autocomplete"; // Added Autocomplete component
 
 import { RANK_NAMES } from "../utils";
-import { canUserReviewPlayer } from "../services/userApi";
 import { isAuthenticated } from "../services/api";
 import { searchPlayers } from "../services/playerApi";
 
@@ -43,7 +42,6 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
         if (player) {
           setPlayerId(player.id);
           // Then check if user can review this player
-          const canReviewResult = await canUserReviewPlayer(player.id);
           setCanReview(canReviewResult);
         } else {
           setCanReview(true); // Allow review for new players
