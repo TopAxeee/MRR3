@@ -4,14 +4,14 @@ import { useNavigate } from "react-router-dom";
 
 import { 
   listRecentPlayers,
-  deletePlayerByNick,
-  updatePlayerNick
 } from "../services/playerApi";
 import {
   fetchReviewsByPlayer,
   deleteReviewById,
   getAdminReviews,
-  fetchReviewsByUserId
+  fetchReviewsByUserId,
+  deletePlayerByNick,
+  updatePlayerNick
 } from "../services/adminApi";
 import {
   isAuthenticated,
