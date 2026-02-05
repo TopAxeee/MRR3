@@ -19,11 +19,17 @@ import ErrorModal from "../components/ErrorModal";
 import RankBadge from "../components/RankBadge";
 import {
   getPlayerByNick,
-  createOrGetPlayerByName,
-  addReview,
-  isAuthenticated,
-  getUserLinkedPlayer
+  createOrGetPlayerByName
+} from "../services/playerApi";
+import {
+  addReview
+} from "../services/reviewApi";
+import {
+  isAuthenticated
 } from "../services/api";
+import {
+  getUserLinkedPlayer
+} from "../services/userApi";
 import { clamp, RANK_NAMES } from "../utils";
 
 // Функция для генерации градиента на основе строки (скопирована из PlayerCard)

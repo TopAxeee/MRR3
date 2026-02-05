@@ -3,15 +3,19 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { 
-  listRecentPlayers, 
-  fetchReviewsByPlayer,
+  listRecentPlayers,
   deletePlayerByNick,
+  updatePlayerNick
+} from "../services/playerApi";
+import {
+  fetchReviewsByPlayer,
   deleteReviewById,
   getAdminReviews,
-  updatePlayerNick,
-  isAuthenticated,
-  checkAdminAccess,
   fetchReviewsByUserId
+} from "../services/adminApi";
+import {
+  isAuthenticated,
+  checkAdminAccess
 } from "../services/api";
 import Pagination from "../components/Pagination";
 

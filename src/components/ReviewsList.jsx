@@ -5,7 +5,7 @@ import Typography from "@mui/material/Typography";
 
 import ReviewItem from "./ReviewItem";
 import Pagination from "./Pagination";
-import { fetchReviewsByPlayer } from "../services/api";
+import { fetchReviewsByPlayer } from "../services/reviewApi";
 
 export default function ReviewsList({ playerNick, refreshKey }) {
   const [items, setItems] = useState([]);

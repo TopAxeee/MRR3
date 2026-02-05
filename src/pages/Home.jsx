@@ -10,7 +10,8 @@ import PlayersGrid from "../components/PlayersGrid";
 import ReviewForm from "../components/ReviewForm";
 import SuccessModal from "../components/SuccessModal";
 import ErrorModal from "../components/ErrorModal";
-import { searchPlayers, listAllPlayers, createOrGetPlayerByName, addReview } from "../services/api";
+import { searchPlayers, listAllPlayers, createOrGetPlayerByName } from "../services/playerApi";
+import { addReview } from "../services/reviewApi";
 import { useDebouncedValue } from "../utils";
 
 // Function to get random items from an array

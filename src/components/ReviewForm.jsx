@@ -15,7 +15,9 @@ import Link from "@mui/material/Link";
 import Autocomplete from "@mui/material/Autocomplete"; // Added Autocomplete component
 
 import { RANK_NAMES } from "../utils";
-import { canUserReviewPlayer, isAuthenticated, searchPlayers } from "../services/api"; // Added searchPlayers
+import { canUserReviewPlayer } from "../services/userApi";
+import { isAuthenticated } from "../services/api";
+import { searchPlayers } from "../services/playerApi";
 
 export default function ReviewForm({ initialNick = "", onSubmit, submitting = false, isPlayerProfile = false, onSuccess, onError }) {
   const [playerNick, setPlayerNick] = useState(initialNick);

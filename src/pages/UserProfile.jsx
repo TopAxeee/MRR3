@@ -15,15 +15,19 @@ import Tab from "@mui/material/Tab";
 
 import { 
   isAuthenticated, 
-  getCurrentUser, 
+  getCurrentUser
+} from "../services/api";
+import {
   getPlayerByNick, 
   createOrGetPlayerByName,
-  linkUserToPlayer,
+  linkUserToPlayer
+} from "../services/playerApi";
+import {
   fetchReviewsByUser,
   fetchReviewsOnLinkedPlayer
-} from "../services/api";
+} from "../services/reviewApi";
 import ReviewItem from "../components/ReviewItem";
-import { getUserLinkedPlayer } from "../services/api";
+import { getUserLinkedPlayer } from "../services/userApi";
 import Pagination from "../components/Pagination";
 
 // Function to generate gradient for avatar (same as in PlayerCard)

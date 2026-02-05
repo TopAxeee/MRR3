@@ -12,7 +12,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 
 import PlayersGrid from "../components/PlayersGrid";
-import { listAllPlayers } from "../services/api";
+import { listAllPlayers } from "../services/playerApi";
 
 export default function Leaderboard() {
   const navigate = useNavigate();

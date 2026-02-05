@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Box, TextField, Button, Typography, Alert } from "@mui/material";
+import { createUserAccount, verifyAndLinkPlayer } from "../services/userApi";
 
 const MockTelegramLogin = ({ onLoginSuccess, onError }) => {
   const [formData, setFormData] = useState({
@@ -41,47 +42,9 @@ const MockTelegramLogin = ({ onLoginSuccess, onError }) => {
         lastName: formData.lastName
       };
 
-      // Make the API call to the new endpoint
-      const response = await fetch(`${import.meta.env?.VITE_API_BASE || "https://marvel-rivals-reviews.onrender.com"}/api/users`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userData),
-      });
+      // Use the new API function to create user account
+      const result = await createUserAccount(userData);
 
-      if (!response.ok) {
-        // If the backend is not available, simulate a successful response
-        if (response.status === 404 || response.status >= 500) {
-          console.warn("Backend not available, simulating successful authentication");
-          
-          // Create a mock user object similar to what the backend would return
-          const mockUser = {
-            id: userData.telegramId,
-            userName: userData.userName,
-            telegramId: userData.telegramId,
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            playerId: null,
-            photoUrl: "someImg",
-            authDate: new Date().toISOString(),
-            playerUid: null
-          };
-          
-          // Store the user data (similar to the real response)
-          localStorage.setItem("telegramUser", JSON.stringify(mockUser));
-          
-          // Show UID prompt after successful user creation
-          setShowUIDPrompt(true);
-          setShowForm(false);
-          return;
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      // Process the successful response
-      const result = await response.json();
-      
       // Store the user data returned by the backend
       localStorage.setItem("telegramUser", JSON.stringify(result));
       
@@ -138,6 +101,9 @@ const MockTelegramLogin = ({ onLoginSuccess, onError }) => {
     });
   };
   
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmedPlayerInfo, setConfirmedPlayerInfo] = useState(null);
+  
   const verifyUID = async () => {
     if (!uid.trim()) {
       setError("UID is required");
@@ -149,11 +115,10 @@ const MockTelegramLogin = ({ onLoginSuccess, onError }) => {
     setError(null);
     
     try {
-      // API key provided by user
-      const apiKey = "c9df835f1961daec64c259b01955ae88266fc4989ecee338273ccf2f8095b140";
-      
+      // Verify UID against game API to get player information
+      const gameApiKey = "c9df835f1961daec64c259b01955ae8266fc4989ecee338273ccf2f8095b1400";
       const myHeaders = new Headers();
-      myHeaders.append("x-api-key", apiKey);
+      myHeaders.append("x-api-key", gameApiKey);
       
       const requestOptions = {
         method: 'GET',
@@ -161,56 +126,74 @@ const MockTelegramLogin = ({ onLoginSuccess, onError }) => {
         redirect: 'follow'
       };
       
-      const response = await fetch(`https://marvelrivalsapi.com/api/v1/player/${uid}`, requestOptions);
+      const gameApiResponse = await fetch(`https://marvelrivalsapi.com/api/v1/player/${uid}`, requestOptions);
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!gameApiResponse.ok) {
+        throw new Error(`Game API error! status: ${gameApiResponse.status}`);
       }
       
-      const result = await response.text();
+      const gameResult = await gameApiResponse.text();
       
       // Parse the result to extract player information
       let parsedResult;
       try {
-        parsedResult = JSON.parse(result);
+        parsedResult = JSON.parse(gameResult);
       } catch (e) {
         // If it's not JSON, treat the response text as is
-        console.warn('Game API did not return JSON, treating as text:', result);
-        // For now, we'll proceed with linking the UID without specific player data
-        parsedResult = { uid: uid, name: `Player_${uid}` };
-        console.log('Parsed Result:', parsedResult)
+        console.warn('Game API did not return JSON, treating as text:', gameResult);
+        parsedResult = { id: 0, name: `Player_${uid}` };
       }
       
       // Extract player information from the response
-      const playerId = parsedResult.id || parsedResult.playerId || 0; // Use appropriate field from response
+      const playerNick = parsedResult.name || `Player_${uid}`;
       
-      // Update the user object in localStorage with the verified UID
-      const storedUser = localStorage.getItem("telegramUser");
-      let user;
-      if (storedUser) {
-        user = JSON.parse(storedUser);
-        user.playerUid = uid; // Add the UID to the user object
-        localStorage.setItem("telegramUser", JSON.stringify(user));
+      // Show confirmation screen with player info
+      setConfirmedPlayerInfo({
+        uid: uid,
+        nick: playerNick
+      });
+      setShowConfirmation(true);
+      setShowUIDPrompt(false);
+      
+    } catch (err) {
+      console.error("Error verifying UID:", err);
+      setError("Failed to verify UID. Please check the UID and try again.");
+      if (onError) {
+        onError("Failed to verify UID. Please check the UID and try again.");
+      }
+    } finally {
+      setVerifyingUID(false);
+    }
+  };
+
+  const confirmPlayerInfo = async () => {
+    try {
+      // Make PATCH request to link the confirmed UID and nickname to the user
+      const currentUserStr = localStorage.getItem("telegramUser");
+      if (!currentUserStr) {
+        throw new Error("No user data found");
       }
       
-      // Now make a PATCH request to link the player to the user
-      // Use the same API base as other API calls in the application
-      const API_BASE = import.meta.env?.VITE_API_BASE || "https://marvel-rivals-reviews.onrender.com";
-      const patchResponse = await fetch(`${API_BASE}/api/users?playerId=${playerId}`, {
+      const currentUser = JSON.parse(currentUserStr);
+      
+      // Update user with player UID and nickname
+      const response = await fetch(`${import.meta.env?.VITE_API_BASE || "https://marvel-rivals-reviews.onrender.com"}/api/users`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          playerUid: uid
+          playerId: currentUser.playerId || null, // Use existing playerId if available
+          playerUid: confirmedPlayerInfo.uid,
+          playerNick: confirmedPlayerInfo.nick
         })
       });
       
-      if (!patchResponse.ok) {
-        throw new Error(`HTTP error during user update! status: ${patchResponse.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const updatedUser = await patchResponse.json();
+      const updatedUser = await response.json();
       
       // Store the updated user information
       localStorage.setItem("telegramUser", JSON.stringify(updatedUser));
@@ -221,14 +204,19 @@ const MockTelegramLogin = ({ onLoginSuccess, onError }) => {
       }
       
     } catch (err) {
-      console.error("Error verifying UID and linking player:", err);
-      setError("Failed to verify UID and link player. Please check the UID and try again.");
+      console.error("Error confirming player info:", err);
+      setError("Failed to confirm player information. Please try again.");
       if (onError) {
-        onError("Failed to verify UID and link player. Please check the UID and try again.");
+        onError("Failed to confirm player information. Please try again.");
       }
-    } finally {
-      setVerifyingUID(false);
     }
+  };
+
+  const rejectPlayerInfo = () => {
+    // Go back to UID prompt to allow user to enter a different UID
+    setShowConfirmation(false);
+    setShowUIDPrompt(true);
+    setUID('');
   };
 
   return (
@@ -344,6 +332,45 @@ const MockTelegramLogin = ({ onLoginSuccess, onError }) => {
               sx={{ ml: 1 }}
             >
               {verifyingUID ? 'Verifying...' : 'Verify UID'}
+            </Button>
+          </Box>
+        </Box>
+      )}
+      
+      {/* Confirmation Screen - shown after UID verification */}
+      {showConfirmation && confirmedPlayerInfo && (
+        <Box sx={{ mt: 2, textAlign: 'left', border: '1px solid #ccc', borderRadius: '4px', p: 2 }}>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+          
+          <Typography variant="h6" sx={{ mb: 2, color: '#1976d2' }}>Confirm Your Profile</Typography>
+          <Typography variant="body1" sx={{ mb: 1 }}>
+            Is this your profile?
+          </Typography>
+          
+          <Box sx={{ bgcolor: '#f5f5f5', p: 2, borderRadius: 1, mb: 2 }}>
+            <Typography variant="body2"><strong>Nickname:</strong> {confirmedPlayerInfo.nick}</Typography>
+            <Typography variant="body2"><strong>UID:</strong> {confirmedPlayerInfo.uid}</Typography>
+          </Box>
+          
+          <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+            <Button 
+              variant="outlined" 
+              onClick={rejectPlayerInfo}
+              disabled={verifyingUID}
+            >
+              Enter Again
+            </Button>
+            <Button 
+              variant="contained" 
+              onClick={confirmPlayerInfo}
+              disabled={verifyingUID}
+              sx={{ ml: 1 }}
+            >
+              Confirm
             </Button>
           </Box>
         </Box>
