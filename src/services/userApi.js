@@ -145,21 +145,20 @@ export async function verifyAndLinkPlayer(uid, gameApiKey = "c9df835f1961daec64c
     } catch (e) {
       // If it's not JSON, treat the response text as is
       console.warn('Game API did not return JSON, treating as text:', gameResult);
-      parsedResult = { id: 0, name: `Player_${uid}` };
     }
     
     // Extract player information from the response
-    const playerId = parsedResult.id || parsedResult.playerId || 0;
+    const playerNick = parsedResult.name;
     
     // Now make a PATCH request to link the player to the user
-    const linkResponse = await fetch(`${API_BASE}/api/users?playerId=${playerId}`, {
+    const linkResponse = await fetch(`${API_BASE}/api/users`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         playerUid: uid,
-        nickName: parsedResult.name
+        nickName: playerNick
       })
     });
     

@@ -201,6 +201,9 @@ const MockTelegramLogin = ({ onLoginSuccess, onError }) => {
       // Successful UID verification and linking - trigger login success
       if (onLoginSuccess) {
         onLoginSuccess(updatedUser);
+      } else {
+        // If no callback provided, redirect to home
+        window.location.href = '/';
       }
       
     } catch (err) {

@@ -56,6 +56,9 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
             
             if (onLoginSuccess) {
               onLoginSuccess(result.user);
+            } else {
+              // If no callback provided, redirect to home
+              window.location.href = '/';
             }
           }
         } else {
@@ -172,6 +175,9 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
       // Successful UID verification and linking - trigger login success
       if (onLoginSuccess) {
         onLoginSuccess(updatedUser);
+      } else {
+        // If no callback provided, redirect to home
+        window.location.href = '/';
       }
       
     } catch (err) {
