@@ -90,7 +90,7 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
     
     try {
       // Verify UID against game API to get player information
-      const gameApiKey = "c9df835f1961daec64c259b01955ae8266fc4989ecee338273ccf2f8095b1400";
+      const gameApiKey = import.meta.env.VITE_GAME_API_KEY || "c9df835f1961daec64c259b01955ae88266fc4989ecee338273ccf2f8095b140";
       const myHeaders = new Headers();
       myHeaders.append("x-api-key", gameApiKey);
       

@@ -90,7 +90,7 @@ export async function createUserAccount(userData) {
 }
 
 // Verify player UID against game API and link to user
-export async function verifyAndLinkPlayer(uid, gameApiKey = "c9df835f1961daec64c259b01955ae88266fc4989ecee338273ccf2f8095b140") {
+export async function verifyAndLinkPlayer(uid, gameApiKey = import.meta.env.VITE_GAME_API_KEY || "c9df835f1961daec64c259b01955ae88266fc4989ecee338273ccf2f8095b140") {
   try {
     // Verify UID against game API
     const myHeaders = new Headers();
