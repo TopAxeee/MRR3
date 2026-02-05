@@ -178,6 +178,7 @@ const MockTelegramLogin = ({ onLoginSuccess, onError }) => {
         console.warn('Game API did not return JSON, treating as text:', result);
         // For now, we'll proceed with linking the UID without specific player data
         parsedResult = { uid: uid, name: `Player_${uid}` };
+        console.log('Parsed Result:', parsedResult)
       }
       
       // Extract player information from the response
@@ -193,15 +194,14 @@ const MockTelegramLogin = ({ onLoginSuccess, onError }) => {
       }
       
       // Now make a PATCH request to link the player to the user
-      // Use localhost for development, but allow override via environment variable
-      const backendUrl = import.meta.env?.VITE_API_BASE || "http://localhost:8080";
-      const patchResponse = await fetch(`${backendUrl}/api/users`, {
+      // Use the same API base as other API calls in the application
+      const API_BASE = import.meta.env?.VITE_API_BASE || "https://marvel-rivals-reviews.onrender.com";
+      const patchResponse = await fetch(`${API_BASE}/api/users?playerId=${playerId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          playerId: playerId,
           playerUid: uid
         })
       });
