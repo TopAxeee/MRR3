@@ -142,7 +142,7 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
   };
 
   // Confirm player info and update user
-  const confirmPlayerInfo = async () => {
+  const handleConfirmPlayerInfo = async () => {
     if (!tempUserData || !confirmedPlayerInfo) {
       setError("Missing user or player data");
       if (onError) onError("Missing user or player data");
@@ -316,7 +316,7 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
             </Button>
             <Button 
               variant="contained" 
-              onClick={confirmPlayerInfo}
+              onClick={handleConfirmPlayerInfo}
               disabled={verifyingUID}
               sx={{ ml: 1 }}
             >

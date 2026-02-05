@@ -166,7 +166,7 @@ const MockTelegramLogin = ({ onLoginSuccess, onError }) => {
     }
   };
 
-  const confirmPlayerInfo = async () => {
+  const handleConfirmPlayerInfo = async () => {
     try {
       // Use service function to link the confirmed UID and nickname to the user
       const updatedUser = await confirmPlayerInfo(confirmedPlayerInfo.uid, confirmedPlayerInfo.nick);
@@ -345,7 +345,7 @@ const MockTelegramLogin = ({ onLoginSuccess, onError }) => {
             </Button>
             <Button 
               variant="contained" 
-              onClick={confirmPlayerInfo}
+              onClick={handleConfirmPlayerInfo}
               disabled={verifyingUID}
               sx={{ ml: 1 }}
             >
