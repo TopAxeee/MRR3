@@ -63,34 +63,6 @@ export async function getUserLinkedPlayer() {
   }
 }
 
-// PATCH /api/users - Привязать игрока к пользователю
-// PATCH /api/users - Link player to user
-export async function linkUserToPlayer(playerId) {
-  const userId = getUserId();
-  if (!userId) throw new Error("User not authenticated");
-  
-  // Using PATCH /api/users with playerId query param
-  return await apiHeaders(`${API_BASE}/api/users?playerId=${playerId}`, {
-    method: "PATCH",
-  });
-}
-
-export async function unlinkUserFromPlayer() {
-  const userId = getUserId();
-  if (!userId) throw new Error("User not authenticated");
-  
-  // To unlink, we would need to set playerId to null, but this isn't supported by the API
-  // We'll throw an error since the API doesn't support unlinking
-  throw new Error("Unlinking player not supported by API");
-}
-
-// Check if user can review a player (10-day restriction)
-// This endpoint doesn't exist in the current API, so we'll skip this functionality
-export async function canUserReviewPlayer(playerId) {
-  // Since this endpoint doesn't exist, we'll assume the user can review
-  return true;
-}
-
 // GET /api/users/all - Получить всех пользователей
 // GET /api/users/all - Get all users
 // Not implemented yet

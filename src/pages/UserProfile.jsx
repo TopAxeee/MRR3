@@ -20,7 +20,6 @@ import {
 import {
   getPlayerByNick, 
   createOrGetPlayerByName,
-  linkUserToPlayer
 } from "../services/playerApi";
 import {
   fetchReviewsByUser,
@@ -156,9 +155,7 @@ export default function UserProfile() {
       
       // Create or get player by nickname
       const player = await createOrGetPlayerByName(playerInput.trim());
-      
-      // Link user to player
-      await linkUserToPlayer(player.id);
+    
       
       // Update state
       setLinkedPlayer(player);
