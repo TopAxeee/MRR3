@@ -144,3 +144,28 @@ export async function verifyAndLinkPlayer(uid, gameApiKey = import.meta.env.VITE
     throw error;
   }
 }
+
+// Confirm player info and update user with player UID and nickname
+export async function confirmPlayerInfo(uid, nickName) {
+  try {
+    const response = await fetch(`${API_BASE}/api/users`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        playerUid: uid,
+        nickName: nickName
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Error confirming player info:", error);
+    throw error;
+  }
+}

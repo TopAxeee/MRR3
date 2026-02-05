@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Box, TextField, Button, Typography, Alert } from "@mui/material";
-import { createUserAccount, verifyAndLinkPlayer } from "../services/userApi";
+import { createUserAccount, verifyAndLinkPlayer, confirmPlayerInfo } from "../services/userApi";
 
 const MockTelegramLogin = ({ onLoginSuccess, onError }) => {
   const [formData, setFormData] = useState({
@@ -168,32 +168,8 @@ const MockTelegramLogin = ({ onLoginSuccess, onError }) => {
 
   const confirmPlayerInfo = async () => {
     try {
-      // Make PATCH request to link the confirmed UID and nickname to the user
-      const currentUserStr = localStorage.getItem("telegramUser");
-      if (!currentUserStr) {
-        throw new Error("No user data found");
-      }
-      
-      const currentUser = JSON.parse(currentUserStr);
-      
-      // Update user with player UID and nickname
-      const response = await fetch(`${import.meta.env?.VITE_API_BASE || "https://marvel-rivals-reviews.onrender.com"}/api/users`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          playerId: currentUser.playerId || null, // Use existing playerId if available
-          playerUid: confirmedPlayerInfo.uid,
-          playerNick: confirmedPlayerInfo.nick
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const updatedUser = await response.json();
+      // Use service function to link the confirmed UID and nickname to the user
+      const updatedUser = await confirmPlayerInfo(confirmedPlayerInfo.uid, confirmedPlayerInfo.nick);
       
       // Store the updated user information
       localStorage.setItem("telegramUser", JSON.stringify(updatedUser));

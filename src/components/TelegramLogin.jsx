@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Box, TextField, Button, Typography, Alert } from "@mui/material";
 import { API_BASE } from "../services/api";
+import { confirmPlayerInfo } from "../services/userApi";
 
 const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" }) => {
   const containerRef = useRef(null);
@@ -149,24 +150,8 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
     }
     
     try {
-      // Make PATCH request to link the confirmed UID and nickname to the user
-      const response = await fetch(`${API_BASE}/api/users`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          playerId: tempUserData.user.playerId || null, // Use existing playerId if available
-          playerUid: confirmedPlayerInfo.uid,
-          playerNick: confirmedPlayerInfo.nick
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const updatedUser = await response.json();
+      // Use service function to link the confirmed UID and nickname to the user
+      const updatedUser = await confirmPlayerInfo(confirmedPlayerInfo.uid, confirmedPlayerInfo.nick);
       
       // Store the updated user information
       localStorage.setItem("telegramUser", JSON.stringify(updatedUser));
