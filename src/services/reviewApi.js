@@ -163,9 +163,76 @@ export async function fetchReviewsByUser(page = 0, limit = 10) {
   }
 }
 
-// Fetch reviews on current user's linked player
-// This function would need to get the user's linked player, which is in userApi
-// We'll skip this function for now and handle it separately if needed
+// GET /api/reviews/player/{playerId} - Получить отзывы на игрока (для владельца игрока)
+// GET /api/reviews/player/{playerId} - Get reviews on player (for player owner)
+export async function fetchReviewsOnLinkedPlayer(page = 0, limit = 10) {
+  try {
+    // Import getCurrentUser locally to avoid circular dependency
+    const { getCurrentUser } = await import('./api');
+    const currentUser = getCurrentUser();
+    
+    if (!currentUser || !currentUser.playerId) {
+      return {
+        items: [],
+        totalPages: 0,
+        currentPage: 0,
+        totalElements: 0,
+        limit: limit
+      };
+    }
+
+    const url = `${API_BASE}/api/reviews/player/${currentUser.playerId}?page=${page}&limit=${limit}`;
+    const response = await apiHeaders(url);
+    
+    // Handle paginated response
+    if (response && typeof response === 'object' && 'content' in response) {
+      // Backend pagination response format
+      return {
+        items: Array.isArray(response.content) 
+          ? response.content.map((review) => ({
+              id: review.id,
+              comment: review.review,
+              createdAt: review.created,
+              grade: review.grade,
+              rank: review.rank,
+              screenshotUrl: review.image,
+              author: review.userNick || "Anonymous",
+            }))
+          : [],
+        totalPages: response.totalPages || 0,
+        currentPage: response.page || page,
+        totalElements: response.totalElements || 0,
+        limit: response.size || limit
+      };
+    } else {
+      // Fallback to previous behavior for non-paginated response
+      const list = Array.isArray(response) ? response : [];
+      return {
+        items: list.map((review) => ({
+          id: review.id,
+          comment: review.review,
+          createdAt: review.created,
+          grade: review.grade,
+          rank: review.rank,
+          screenshotUrl: review.image,
+          author: review.userNick || "Anonymous",
+        })),
+        totalPages: 1,
+        currentPage: 0,
+        totalElements: list.length,
+        limit: limit
+      };
+    }
+  } catch {
+    return {
+      items: [],
+      totalPages: 0,
+      currentPage: 0,
+      totalElements: 0,
+      limit: limit
+    };
+  }
+}
 
 // POST /api/reviews - Создать отзыв
 // POST /api/reviews - Create review
