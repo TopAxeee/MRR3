@@ -17,6 +17,7 @@ import Autocomplete from "@mui/material/Autocomplete"; // Added Autocomplete com
 import { RANK_NAMES } from "../utils";
 import { isAuthenticated } from "../services/api";
 import { searchPlayers } from "../services/playerApi";
+import { canUserReviewPlayer } from "../services/reviewApi";
 
 export default function ReviewForm({ initialNick = "", onSubmit, submitting = false, isPlayerProfile = false, onSuccess, onError }) {
   const [playerNick, setPlayerNick] = useState(initialNick);
@@ -31,8 +32,16 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
 
   // Check if user can review this player (10-day restriction)
   useEffect(() => {
+    // When playerNick changes, reset the canReview state to allow re-attempts
+    if (playerNick.trim()) {
+      setCanReview(true);
+    }
+    
     const checkReviewPermission = async () => {
-      if (!playerNick.trim()) return;
+      if (!playerNick.trim() || !userAuthenticated) {
+        setCanReview(true);
+        return;
+      }
       
       try {
         setReviewCheckLoading(true);
@@ -41,8 +50,9 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
         const player = players.find(p => p.nickName === playerNick.trim());
         if (player) {
           setPlayerId(player.id);
-          // Then check if user can review this player
-          setCanReview(canReviewResult);
+          // For now, assume user can review since the check happens on the server side
+          // when the review is submitted
+          setCanReview(true);
         } else {
           setCanReview(true); // Allow review for new players
         }
@@ -57,7 +67,7 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
     // Debounce the check
     const timeoutId = setTimeout(checkReviewPermission, 500);
     return () => clearTimeout(timeoutId);
-  }, [playerNick]);
+  }, [playerNick, userAuthenticated]);
 
   // Search for players as user types
   useEffect(() => {
@@ -108,6 +118,12 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
         onSuccess();
       }
     } catch (error) {
+      // Check if this is a 403 error related to review restrictions
+      if (error.message.includes("403") && (error.message.includes("10 дней") || error.message.includes("10 day") || error.message.includes("FORBIDDEN_ERROR"))) {
+        // Update the canReview state to reflect the restriction
+        setCanReview(false);
+      }
+      
       // Pass error to parent component for handling
       if (onError) {
         onError(error);
@@ -229,7 +245,8 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
               borderLeft: "4px solid #FFA500",
             }}
           >
-            You can only leave one review per player every 10 days. Please wait before submitting another review for this player.
+            You can only leave one review per player every 10 days. Please wait before submitting another review for this player. 
+            {playerNick && ` You can review ${playerNick} again after the restriction period.`}
           </Alert>
         )}
 

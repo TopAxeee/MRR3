@@ -246,3 +246,12 @@ export async function addReview(payload) {
   });
   return res?.id ?? null;
 }
+
+// Проверить, может ли пользователь оставить отзыв на игрока
+// Check if user can review player
+export async function canUserReviewPlayer(playerId) {
+  // В настоящее время бэкенд не предоставляет отдельного endpoint для проверки
+  // возможности оставить отзыв, поэтому мы просто возвращаем true
+  // Ограничение (1 отзыв в 10 дней) будет проверяться на сервере при отправке отзыва
+  return true;
+}
