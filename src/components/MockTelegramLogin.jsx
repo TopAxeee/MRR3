@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Box, TextField, Button, Typography, Alert } from "@mui/material";
-import { createUserAccount, verifyAndLinkPlayer, confirmPlayerInfo } from "../services/userApi";
+import { createUserAccount, verifyAndLinkPlayer, confirmPlayerInfo, linkUserToPlayer } from "../services/userApi";
+import { createOrGetPlayerWithUid } from "../services/playerApi";
 
 const MockTelegramLogin = ({ onLoginSuccess, onError }) => {
   const [formData, setFormData] = useState({
@@ -168,8 +169,20 @@ const MockTelegramLogin = ({ onLoginSuccess, onError }) => {
 
   const handleConfirmPlayerInfo = async () => {
     try {
-      // Use service function to link the confirmed UID and nickname to the user
-      const updatedUser = await confirmPlayerInfo(confirmedPlayerInfo.uid, confirmedPlayerInfo.nick);
+      // First, create or get the player in our database using UID and nickname
+      const player = await createOrGetPlayerWithUid(confirmedPlayerInfo.nick, confirmedPlayerInfo.uid);
+      
+      // Get user data from localStorage
+      const storedUser = JSON.parse(localStorage.getItem("telegramUser"));
+      
+      // Then, link the user to the player using the new API format
+      const updatedUser = await linkUserToPlayer(
+        player.id,
+        storedUser.telegramId,
+        storedUser.userName,
+        storedUser.firstName,
+        storedUser.lastName
+      );
       
       // Store the updated user information
       localStorage.setItem("telegramUser", JSON.stringify(updatedUser));

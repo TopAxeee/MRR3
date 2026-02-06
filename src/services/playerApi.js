@@ -29,6 +29,25 @@ export async function createOrGetPlayerByName(nickName) {
   }
 }
 
+// POST /api/players/createWithUid - Создать нового игрока с UID
+// POST /api/players/createWithUid - Create new player with UID
+export async function createOrGetPlayerWithUid(nickName, playerUid) {
+  const body = JSON.stringify({ nickName, playerUid });
+  try {
+    return await apiHeaders(`${API_BASE}/api/players`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+    });
+  } catch (e) {
+    if (String(e.message).startsWith("409 ")) {
+      // Player already exists, fetch by nick
+      return await getPlayerByNick(nickName);
+    }
+    throw e;
+  }
+}
+
 // GET /api/players/nick/{nick} - Получить игрока
 // GET /api/players/nick/{nick} - Get player
 export async function getPlayerByNick(nick) {

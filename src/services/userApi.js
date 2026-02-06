@@ -145,6 +145,34 @@ export async function verifyAndLinkPlayer(uid, gameApiKey = import.meta.env.VITE
   }
 }
 
+// Link user to player by updating user with playerId
+export async function linkUserToPlayer(playerId, telegramId, userName, firstName, lastName) {
+  try {
+    const response = await fetch(`${API_BASE}/api/users`, {
+      method: 'POST', // Changed to POST as per new requirement
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        telegramId,
+        userName,
+        firstName,
+        lastName,
+        playerId
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Error linking user to player:", error);
+    throw error;
+  }
+}
+
 // Confirm player info and update user with player UID and nickname
 export async function confirmPlayerInfo(uid, nickName) {
   try {
