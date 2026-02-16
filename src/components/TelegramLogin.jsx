@@ -98,18 +98,17 @@ const TelegramLogin = ({ onLoginSuccess, onError, botName, buttonSize = "large" 
           localStorage.setItem("sessionToken", result.token || "");
           
           // Store user data in localStorage if provided
-          if (result.userId) {
-            const userData = {
-              telegramId: result.userTelegramId, // Assuming userTelegramId is the telegramId
-              isAuthenticated: true,
-              // Add any other user properties that were returned
-              ...result.user
-            };
-            localStorage.setItem("telegramUser", JSON.stringify(userData));
-            console.log(localStorage.getItem("telegramUser"))
-            console.log(userData)
-          }
-
+          
+          const userData = {
+            telegramId: result.userTelegramId, // Assuming userTelegramId is the telegramId
+            isAuthenticated: true,
+            // Add any other user properties that were returned
+            ...result.user
+          };
+          localStorage.setItem("telegramUser", JSON.stringify(userData));
+          console.log(localStorage.getItem("telegramUser"))
+          console.log(userData)
+          
           // Trigger login success callback
           if (onLoginSuccess) {
             onLoginSuccess(result.user || { id: result.userId });
