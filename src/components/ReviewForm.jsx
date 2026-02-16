@@ -30,6 +30,10 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
   const [searchResults, setSearchResults] = useState([]); // Added state for search results
   const [loadingSearch, setLoadingSearch] = useState(false); // Added state for search loading
 
+
+  // Check if user is authenticated
+  const userAuthenticated = isAuthenticated();
+
   // Check if user can review this player (10-day restriction)
   useEffect(() => {
     // When playerNick changes, reset the canReview state to allow re-attempts
@@ -131,8 +135,6 @@ export default function ReviewForm({ initialNick = "", onSubmit, submitting = fa
     }
   };
 
-  // Check if user is authenticated
-  const userAuthenticated = isAuthenticated();
 
   return (
     <Paper sx={{ p: 2, mb: 2, position: "relative", background: "#15171C", borderRadius: 12 }}>
