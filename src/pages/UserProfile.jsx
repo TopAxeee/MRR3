@@ -99,11 +99,22 @@ export default function UserProfile() {
       console.log("Loading linked player...");
       const player = await getUserLinkedPlayer();
       console.log("Linked player data:", player);
-      setLinkedPlayer(player);
+      
+      // Check if the returned player object has meaningful data or just null values
+      // If all key properties are null, treat it as if there's no linked player
+      const hasMeaningfulData = player && (
+        player.id !== null && 
+        player.nickName !== null && 
+        player.id !== undefined && 
+        player.nickName !== undefined
+      );
+      
+      const actualPlayer = hasMeaningfulData ? player : null;
+      setLinkedPlayer(actualPlayer);
       
       // If player is linked, load reviews
-      if (player) {
-        await loadReviews(player);
+      if (actualPlayer) {
+        await loadReviews(actualPlayer);
       }
       
       setLoading(false);

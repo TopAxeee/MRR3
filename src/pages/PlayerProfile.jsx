@@ -81,7 +81,17 @@ export default function PlayerProfile() {
         // Only check if this is the current user's linked player if we have a player and user is authenticated
         if (p && isAuthenticated()) {
           try {
-            const linkedPlayer = await getUserLinkedPlayer();
+            const rawLinkedPlayer = await getUserLinkedPlayer();
+            
+            // Check if the returned player object has meaningful data or just null values
+            const hasMeaningfulData = rawLinkedPlayer && (
+              rawLinkedPlayer.id !== null && 
+              rawLinkedPlayer.nickName !== null && 
+              rawLinkedPlayer.id !== undefined && 
+              rawLinkedPlayer.nickName !== undefined
+            );
+            
+            const linkedPlayer = hasMeaningfulData ? rawLinkedPlayer : null;
             if (!cancelled) {
               setIsLinkedPlayer(linkedPlayer && linkedPlayer.id === p.id);
             }
@@ -133,7 +143,17 @@ export default function PlayerProfile() {
       // Only check if this is the current user's linked player if we have a player and user is authenticated
       if (p && isAuthenticated()) {
         try {
-          const linkedPlayer = await getUserLinkedPlayer();
+          const rawLinkedPlayer = await getUserLinkedPlayer();
+          
+          // Check if the returned player object has meaningful data or just null values
+          const hasMeaningfulData = rawLinkedPlayer && (
+            rawLinkedPlayer.id !== null && 
+            rawLinkedPlayer.nickName !== null && 
+            rawLinkedPlayer.id !== undefined && 
+            rawLinkedPlayer.nickName !== undefined
+          );
+          
+          const linkedPlayer = hasMeaningfulData ? rawLinkedPlayer : null;
           setIsLinkedPlayer(linkedPlayer && linkedPlayer.id === p.id);
         } catch (err) {
           console.error("Error checking if player is linked:", err);
