@@ -118,13 +118,40 @@ export default function UserProfile() {
     try {
       // Load reviews by user
       const userReviewsData = await fetchReviewsByUser(0, 10);
-      setUserReviews(userReviewsData);
+      setUserReviews(userReviewsData || { 
+        items: [], 
+        currentPage: 0, 
+        totalPages: 0, 
+        totalElements: 0,
+        limit: 10
+      });
       
       // Load reviews on player (first page)
       const playerReviewsData = await fetchReviewsOnLinkedPlayer(0, 10);
-      setPlayerReviews(playerReviewsData);
+      setPlayerReviews(playerReviewsData || { 
+        items: [], 
+        currentPage: 0, 
+        totalPages: 0, 
+        totalElements: 0,
+        limit: 10
+      });
     } catch (err) {
       console.error("Error loading reviews:", err);
+      // Ensure state is set to default values in case of error
+      setUserReviews({ 
+        items: [], 
+        currentPage: 0, 
+        totalPages: 0, 
+        totalElements: 0,
+        limit: 10
+      });
+      setPlayerReviews({ 
+        items: [], 
+        currentPage: 0, 
+        totalPages: 0, 
+        totalElements: 0,
+        limit: 10
+      });
     }
   };
 
@@ -335,9 +362,9 @@ export default function UserProfile() {
           {/* Reviews by You Tab */}
           {activeTab === 0 && (
             <Box>
-              {userReviews.items.length > 0 ? (
+              {userReviews.items && userReviews.items.length > 0 ? (
                 <Box sx={{ mb: 3 }}>
-                  {userReviews.items.map((review) => (
+                  {userReviews.items?.map((review) => (
                     <Box key={review.id} sx={{ mb: 2 }}>
                       <ReviewItem review={{
                         ...review,
@@ -352,7 +379,7 @@ export default function UserProfile() {
                     </Box>
                   ))}
                   
-                  {userReviews.totalElements > 0 && (
+                  {userReviews.totalElements > 0 && userReviews.items && (
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 1 }}>
                       Showing {userReviews.items.length} of {userReviews.totalElements} reviews
                     </Typography>
@@ -375,15 +402,15 @@ export default function UserProfile() {
           {/* Reviews on You Tab */}
           {activeTab === 1 && (
             <Box>
-              {playerReviews.items.length > 0 ? (
+              {playerReviews.items && playerReviews.items.length > 0 ? (
                 <Box sx={{ mb: 3 }}>
-                  {playerReviews.items.map((review) => (
+                  {playerReviews.items?.map((review) => (
                     <Box key={review.id} sx={{ mb: 2 }}>
                       <ReviewItem review={review} />
                     </Box>
                   ))}
                   
-                  {playerReviews.totalElements > 0 && (
+                  {playerReviews.totalElements > 0 && playerReviews.items && (
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 1 }}>
                       Showing {playerReviews.items.length} of {playerReviews.totalElements} reviews
                     </Typography>

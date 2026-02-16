@@ -17,10 +17,17 @@ export default function ReviewsList({ playerNick, refreshKey }) {
   const loadReviews = useCallback(async () => {
     setLoading(true);
     try {
+      // Only fetch reviews if playerNick is valid
+      if (!playerNick || typeof playerNick !== 'string' || playerNick.trim() === '') {
+        setItems([]);
+        setTotalPages(0);
+        setTotalElements(0);
+        return;
+      }
       const data = await fetchReviewsByPlayer(playerNick, 30, currentPage, 10);
-      setItems(data.items);
-      setTotalPages(data.totalPages);
-      setTotalElements(data.totalElements);
+      setItems(data.items || []);
+      setTotalPages(data.totalPages || 0);
+      setTotalElements(data.totalElements || 0);
     } catch (error) {
       console.error("Error loading reviews:", error);
       setItems([]);
@@ -50,7 +57,7 @@ export default function ReviewsList({ playerNick, refreshKey }) {
 
   if (loading) return <Typography>Loading reviews…</Typography>;
   
-  if (!items.length)
+  if (!items || !items.length)
     return (
       <Typography variant="body2" color="text.secondary">
         No reviews yet.
@@ -60,12 +67,12 @@ export default function ReviewsList({ playerNick, refreshKey }) {
   return (
     <>
       <Stack spacing={2}>
-        {items.map((r) => (
+        {items?.map((r) => (
           <ReviewItem key={r.id} review={r} />
         ))}
       </Stack>
       
-      {totalElements > 0 && (
+      {totalElements > 0 && items && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 1 }}>
           Showing {items.length} of {totalElements} reviews
         </Typography>
