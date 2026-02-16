@@ -20,6 +20,7 @@ import {
 import {
   getPlayerByNick, 
   createOrGetPlayerByName,
+  createOrGetPlayerWithUid,
 } from "../services/playerApi";
 import {
   fetchReviewsByUser,
@@ -53,7 +54,8 @@ export default function UserProfile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [linkedPlayer, setLinkedPlayer] = useState(null);
-  const [playerInput, setPlayerInput] = useState("");
+  const [playerUid, setPlayerUid] = useState("");
+  const [playerNickname, setPlayerNickname] = useState("");
   const [loading, setLoading] = useState(true);
   const [linking, setLinking] = useState(false);
   const [error, setError] = useState(null);
@@ -146,7 +148,7 @@ export default function UserProfile() {
 
   const handleLinkPlayer = async (e) => {
     e.preventDefault();
-    if (!playerInput.trim()) return;
+    if (!playerNickname.trim()) return;
     
     try {
       setLinking(true);
@@ -154,18 +156,19 @@ export default function UserProfile() {
       setSuccess(null);
       
       // Create or get player by nickname
-      const player = await createOrGetPlayerByName(playerInput.trim());
+      const player = await createOrGetPlayerWithUid(playerNickname.trim(), playerUid.trim());
     
       
       // Update state
       setLinkedPlayer(player);
       setSuccess("Player linked successfully!");
       
+      // Clear inputs
+      setPlayerUid("");
+      setPlayerNickname("");
+      
       // Load reviews for the newly linked player
       await loadReviews(player);
-      
-      // Clear input
-      setPlayerInput("");
     } catch (err) {
       console.error("Error linking player:", err);
       setError("Failed to link player: " + err.message);
@@ -227,7 +230,7 @@ export default function UserProfile() {
           Link to Player
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Link your Telegram account to an in-game player nickname. This will allow you to leave reviews and see your review history.
+          Link your Telegram account to an in-game player by entering your UID and nickname. This will allow you to leave reviews and see your review history.
         </Typography>
         
         {linkedPlayer ? (
@@ -256,24 +259,41 @@ export default function UserProfile() {
               <Typography variant="body2" color="text.secondary">
                 Linked player account
               </Typography>
+              {linkedPlayer.playerUid && (
+                <Typography variant="body2" color="text.secondary">
+                  UID: {linkedPlayer.playerUid}
+                </Typography>
+              )}
             </Box>
           </Box>
         ) : (
-          <Box component="form" onSubmit={handleLinkPlayer} sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+          <Box component="form" onSubmit={handleLinkPlayer} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <TextField
-              label="Player Nickname"
-              value={playerInput}
-              onChange={(e) => setPlayerInput(e.target.value)}
+              label="Player UID"
+              value={playerUid}
+              onChange={(e) => setPlayerUid(e.target.value)}
               variant="outlined"
               size="small"
               fullWidth
               disabled={linking}
+              placeholder="Enter your player UID"
+            />
+            <TextField
+              label="Player Nickname"
+              value={playerNickname}
+              onChange={(e) => setPlayerNickname(e.target.value)}
+              variant="outlined"
+              size="small"
+              fullWidth
+              disabled={linking}
+              placeholder="Enter your player nickname"
             />
             <Button
               type="submit"
               variant="contained"
-              disabled={linking || !playerInput.trim()}
+              disabled={linking || !playerNickname.trim()}
               startIcon={linking ? <CircularProgress size={20} /> : null}
+              sx={{ alignSelf: "flex-start" }}
             >
               {linking ? "Linking..." : "Link Player"}
             </Button>
