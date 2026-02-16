@@ -30,7 +30,6 @@ export async function createOrGetPlayerByName(nickName) {
 }
 
 // POST /api/players/createWithUid - Создать нового игрока с UID
-// POST /api/players/createWithUid - Create new player with UID
 export async function createOrGetPlayerWithUid(nickName, playerUid) {
   const body = JSON.stringify({ nickName, playerUid });
   try {
@@ -49,7 +48,6 @@ export async function createOrGetPlayerWithUid(nickName, playerUid) {
 }
 
 // GET /api/players/nick/{nick} - Получить игрока
-// GET /api/players/nick/{nick} - Get player
 export async function getPlayerByNick(nick) {
   const cacheKey = nick.toLowerCase();
   
@@ -140,7 +138,7 @@ export async function listRecentPlayers(limit = 12, page = 0) {
 export async function listAllPlayers() {
   // Fetch all players for leaderboard
   const url = `${API_BASE}/api/players`;
-  const response = await apiHeaders(url);
+  const response = await apiHeaders(url); 
   // Handle paginated response
   const list = response && typeof response === 'object' && 'content' in response 
     ? response.content 
